@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify
+from admin import admin_bp
 import random
 
 app = Flask(__name__)
@@ -18,11 +19,9 @@ bus_stops = [
     {"name": "คณะแพทยศาสตร์", "lat": 13.7330, "lng": 100.7790},
 ]
 
-
 @app.route("/")
 def index():
     return render_template("index.html")
-
 
 @app.route("/api/buses")
 def get_buses():
@@ -32,11 +31,11 @@ def get_buses():
         bus["lng"] += random.uniform(-0.0003, 0.0003)
     return jsonify(buses)
 
-
 @app.route("/api/stops")
 def get_stops():
     return jsonify(bus_stops)
 
+app.register_blueprint(admin_bp, url_prefix="/admin")
 
 if __name__ == "__main__":
     app.run(debug=True)
