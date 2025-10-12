@@ -1,19 +1,416 @@
-:root{--brand:#ff6b00;--ink:#1f2937;--muted:#6b7280;--bg:#f5f7fb;--card:#fff;--shadow:0 8px 24px rgba(0,0,0,.06);}
-*{box-sizing:border-box}
-body.app{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;}
-.topbar{position:sticky;top:0;z-index:10;background:var(--card);box-shadow:var(--shadow);padding:.6rem .75rem}
-.brand{display:flex;align-items:center;gap:.6rem}.dot{width:12px;height:12px;border-radius:999px;background:var(--brand)}
-.layout-admin{display:grid;grid-template-columns:60px 360px 1fr;gap:16px;padding:16px}
-.side-orange{background:var(--brand);border-radius:10px;padding:.75rem .25rem;display:flex;flex-direction:column;gap:10px}
-.side-item{color:#fff;text-decoration:none;padding:.6rem .4rem .6rem .6rem;border-radius:8px;font-weight:500;display:block}
-.side-item.active,.side-item:hover{background:rgba(255,255,255,.2)}
-.left-panel .panel,.right-map .panel{background:var(--card);border-radius:10px;box-shadow:var(--shadow);padding:1rem}
-.right-map .panel{padding:0}
-.admin-map{height:calc(100vh - 120px);min-height:520px;width:100%}
-.stop-list{list-style:disc inside;padding-left:0}
-.kpi-card{display:flex;gap:.5rem;align-items:center;justify-content:center;border-radius:10px;padding:.4rem .5rem;background:#fff;box-shadow:var(--shadow)}
-.kpi-icon{width:10px;height:10px;border-radius:999px;display:inline-block}.kpi-green{background:#10b981}.kpi-indigo{background:#6366f1}.kpi-amber{background:#f59e0b}
-.kpi-label{font-size:.8rem;color:var(--muted)} .kpi-value{font-size:1.05rem;font-weight:600}
-.quick-pop{min-width:230px}.form-label-sm{font-size:.75rem;color:var(--muted);margin-bottom:.15rem}
-.form-control,.form-select{border-radius:10px;border-color:#e6e8ef}
-.form-control:focus,.form-select:focus{border-color:var(--brand);box-shadow:0 0 0 .2rem rgba(255,107,0,.15)}
+/* ================== Variables ================== */
+:root{
+  --brand: #f77b2f;
+  --brand-dark: #e56f28;
+  --brand-darker: #cc6122;
+  --topbar-bg: #ff6b00;
+  --topbar-h: 56px; /* ปรับตามความสูง header จริง */
+}
+
+/* ================== Base ================== */
+body{
+  font-family:"Noto Sans Thai",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:#f6f7fb;
+}
+.app{
+  display:grid;
+  grid-template-columns:280px 1fr;
+  gap:16px;
+  padding:16px;
+  align-items:start; /* ช่วยให้ sticky ทำงานดี */
+}
+
+/* ================== Sidebar ================== */
+.side{
+  background:var(--brand);
+  color:#fff;
+  border-radius:16px;
+  padding:22px;
+  display:flex;                /* ← แก้จาก display:; */
+  flex-direction:column;
+  gap:2px;
+
+  /* sticky */
+  position:sticky;
+  top:calc(var(--topbar-h) + 16px);
+  max-height:calc(100vh - var(--topbar-h) - 32px);
+  overflow:auto;
+}
+.side .side-item{
+  color:#fff;
+  text-decoration:none;
+  cursor:pointer;
+
+  /* ปุ่มให้อยู่กลาง */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:.6rem;               /* ซ้าย-ขวาเท่ากัน */
+  border-radius:20px;
+  font-weight:1000;
+  font-size:1.6rem;
+  line-height:2;
+  width:100%;
+  text-align:center;
+}
+.side .side-item.active{ background:rgba(255,255,255,.2); }
+
+/* ================== KPIs ================== */
+.kpis{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+}
+.kpi{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 10px 20px rgba(0,0,0,.05);
+}
+.dot{ width:10px; height:10px; border-radius:999px; display:inline-block; }
+.dot.green{ background:#27ae60; }
+.dot.blue{  background:#5865f2; }
+.dot.orange{background:#f31212; }
+
+/* ================== Map & Panels ================== */
+#map{
+  height:72vh;
+  border-radius:16px;
+  overflow:hidden;
+}
+.panel-content[hidden]{ display:none !important; }
+
+/* ================== Topbar ================== */
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  background:var(--topbar-bg);
+  border-bottom:1px solid #eef0f3;
+  padding:10px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.topbar .title{
+  font-weight:700;
+  letter-spacing:.2px;
+  color:#edebeb; /* ปรับเป็น #fff ก็ได้ */
+}
+
+/* ปุ่ม outline ใน topbar ให้มีพื้นหลัง */
+.topbar .btn-outline-secondary{
+  background:#fff;
+  border-color:var(--brand);
+  color:var(--brand);
+}
+.topbar .btn-outline-secondary:hover{
+  background:var(--brand-dark);
+  border-color:var(--brand-dark);
+  color:#fff;
+}
+.topbar .btn-outline-secondary:active{
+  background:var(--brand-darker);
+  border-color:var(--brand-darker);
+  color:#fff;
+}
+
+/* ================== Responsive ================== */
+@media (max-width: 991.98px){
+  .side{
+    position:static;
+    max-height:none;
+    overflow:visible;
+  }
+}
+
+/* label ของ marker */
+.leaflet-tooltip.bus-label,
+.leaflet-tooltip.stop-label{
+  background:rgba(255,255,255,.95);
+  border:1px solid #eaeaea;
+  border-radius:6px;
+  padding:2px 6px;
+  font-size:.8rem;
+  color:#1f2937;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+}
+
+/* ================== Theme Variables ================== */
+:root{
+  --brand:#f77b2f;
+  --brand-2:#ff6b00;
+  --brand-dark:#e56f28;
+  --brand-darker:#cc6122;
+
+  --bg:#f6f7fb;
+  --text:#0f172a;
+  --muted:#475569;
+
+  --panel-bg:#ffffff;
+  --panel-border:rgba(15,23,42,.08);
+  --panel-shadow:0 10px 24px rgba(0,0,0,.06);
+  --card-outline:rgba(255,255,255,.6);
+
+  --topbar-bg:var(--brand-2);
+  --topbar-h:56px;
+}
+
+/* โหมดมืด */
+[data-theme="dark"]{
+  --bg:#232934;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+
+  --panel-bg:#0f172a;
+  --panel-border:#1f2937;
+  --panel-shadow:0 12px 28px rgba(0,0,0,.45);
+  --card-outline:rgba(255,255,255,.08);
+
+  --topbar-bg:#101827;
+}
+
+/* ================== Base ================== */
+body{
+  font-family:"Noto Sans Thai",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+.app{
+  display:grid; grid-template-columns:280px 1fr; gap:16px; padding:16px; align-items:start;
+}
+
+/* ================== Topbar ================== */
+.topbar{
+  position:sticky; top:0; z-index:1000;
+  background:var(--topbar-bg);
+  border-bottom:1px solid #eef0f3;
+  padding:10px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.topbar .title{ font-weight:700; letter-spacing:.2px; color:#fff; }
+.topbar .btn-outline-secondary{
+  background:#fff; border-color:#fff; color:#333;
+}
+[data-theme="dark"] .topbar .btn-outline-secondary{
+  background:#1f2937; border-color:#1f2937; color:#e5e7eb;
+}
+.topbar .btn-outline-secondary:hover{
+  filter:brightness(.95);
+}
+
+/* ================== Sidebar ================== */
+.side{
+  background:var(--brand); color:#fff;
+  border-radius:16px; padding:22px;
+  display:flex; flex-direction:column; gap:8px;
+
+  position:sticky;
+  top:calc(var(--topbar-h) + 16px);
+  max-height:calc(100vh - var(--topbar-h) - 32px);
+  overflow:auto;
+
+  /* กรอบสวย ๆ แบบนุ่ม */
+  box-shadow:var(--panel-shadow);
+  outline:1px solid var(--card-outline);
+}
+.side .side-item{
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; text-decoration:none; color:#fff;
+
+  padding:.6rem;
+  border-radius:16px;
+  font-weight:800; font-size:1.2rem; line-height:1.25;
+  width:100%; text-align:center;
+  transition:background .15s, transform .05s;
+}
+.side .side-item:hover{ background:rgba(255, 255, 255, 0.18); }
+.side .side-item.active{ background:rgba(255,255,255,.25); }
+.side .side-item:active{ transform:translateY(1px); }
+
+/* ================== Panels & Map ================== */
+.panel{
+  background:var(--panel-bg);
+  border:1px solid var(--panel-border);
+  border-radius:16px;
+  box-shadow:var(--panel-shadow);
+  outline:3px solid var(--card-outline);       /* กรอบนอกบาง ๆ */
+}
+#map{ height:72vh; border-radius:16px; overflow:hidden; }
+.panel-content[hidden]{ display:none !important; }
+
+/* KPI cards */
+.kpis{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.kpi{
+  display:flex; align-items:center; gap:10px; padding:12px;
+  border-radius:14px; background:var(--panel-bg);
+  border:1px solid var(--panel-border); box-shadow:var(--panel-shadow);
+}
+.dot{ width:10px; height:10px; border-radius:999px; display:inline-block; }
+.dot.green{background:#27ae60}.dot.blue{background:#5865f2}.dot.orange{background:#f39c12}
+
+/* Leaflet popups/tooltips ให้เข้ากับโหมดมืด */
+[data-theme="dark"] .leaflet-popup-content-wrapper,
+[data-theme="dark"] .leaflet-popup-tip{
+  background:#ffffff; color:#e5e7eb; border:1px solid #1f2937;
+}
+.leaflet-tooltip.bus-label,
+.leaflet-tooltip.stop-label{
+  background:rgba(255,255,255,.95);
+  border:1px solid #eaeaea; border-radius:6px;
+  padding:2px 6px; font-size:.8rem; color:#1f2937;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+}
+[data-theme="dark"] .leaflet-tooltip.bus-label,
+[data-theme="dark"] .leaflet-tooltip.stop-label{
+  background:rgba(15,23,42,.95);
+  border-color:#334155; color:#e5e7eb;
+}
+
+/* ================== Responsive ================== */
+@media (max-width: 991.98px){
+  .side{ position:static; max-height:none; overflow:visible; }
+}
+
+
+
+
+
+/* ================== Panel: ค้นหาป้าย ================== */
+
+#panel-search h3{
+  font-weight: 600;
+  letter-spacing: .2px;
+  margin-bottom: 1rem;
+}
+
+/* กล่องค้นหา */
+#panel-search #search-stop{
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--text);
+  border-radius: 12px;
+  padding: .6rem .9rem;
+  box-shadow: var(--panel-shadow);
+  transition: border-color .15s, box-shadow .15s;
+}
+#panel-search #search-stop::placeholder{
+  color: rgba(148,163,184,.9); /* slate-400 */
+}
+#panel-search #search-stop:focus{
+  border-color: rgba(247,123,47,.55);           /* brand-ish */
+  box-shadow: 0 0 0 .2rem rgba(247,123,47,.15); /* focus ring */
+  outline: 0;
+}
+
+/* รายการป้าย */
+#panel-search #stop-list{
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  border-radius: 14px;
+  box-shadow: var(--panel-shadow);
+  max-height: 32vh;           /* สูงพอดี ไม่ดันแมพ */
+  overflow: auto;              /* เลื่อนเฉพาะลิสต์ */
+}
+
+/* ข้อความว่าง (ถ้าไม่มี li) */
+#panel-search #stop-list:empty::before{
+  content: "ยังไม่มีป้ายให้แสดง";
+  display: block;
+  padding: .75rem .85rem;
+  color: rgba(148,163,184,.9);
+  font-size: .95rem;
+}
+
+/* รายการแต่ละแถว */
+#panel-search #stop-list li{
+  padding: .65rem .85rem;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background .12s, transform .04s;
+}
+#panel-search #stop-list li + li{
+  margin-top: 6px;
+}
+#panel-search #stop-list li:hover{
+  background: rgba(15,23,42,.06);               /* light */
+}
+[data-theme="dark"] #panel-search #stop-list li:hover{
+  background: rgba(255,255,255,.06);            /* dark */
+}
+#panel-search #stop-list li:active{
+  transform: translateY(1px);
+}
+
+/* KPI บล็อก (ให้เว้นระยะและ align สวยขึ้น) */
+#panel-search .kpis{
+  margin-top: .75rem;
+}
+#panel-search .kpi{
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  box-shadow: var(--panel-shadow);
+  border-radius: 14px;
+}
+#panel-search .kpi .small{
+  color: rgba(100,116,139,.95); /* slate-500 */
+}
+[data-theme="dark"] #panel-search .kpi .small{
+  color: rgba(148,163,184,.95); /* slate-400 */
+}
+
+/* ให้ข้อความใน panel ใช้สีตามธีมเสมอ */
+.panel,
+.panel-content,
+.kpi{
+  color: var(--text);
+}
+
+/* ตัวเลข/หัวข้อใน KPI ให้ใช้สีตามธีม */
+#panel-search .kpi .fs-5,
+#panel-search .kpi .fw-semibold{
+  color: var(--text);
+}
+
+/* ข้อความรองใน panel (ที่ใช้ .text-muted ของ Bootstrap) */
+#panel-search .text-muted{
+  color: var(--muted) !important;
+}
+/* ถ้าอยากให้ใช้ได้ทุก panel ใส่บรรทัดนี้แทนบรรทัดบน */
+ /* .panel .text-muted{ color: var(--muted) !important; } */
+/* ทำให้กล่อง panel ครอบลูกให้หมด และมี padding พอ */
+.panel-content{
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  box-shadow: var(--panel-shadow);
+  padding: 16px 18px;
+  overflow: hidden;            /* กันทะลุมุมโค้ง */
+}
+
+/* หัวข้อให้ขนาดพอดี + ห่อบรรทัดได้ */
+#panel-search h3{
+  margin: 0 0 14px;
+  font-weight: 800;
+  line-height: 1.15;
+  font-size: clamp(1.25rem, 1.1rem + .6vw, 1.75rem); /* ย่อ/ขยายตามจอ */
+  color: var(--text);
+  overflow-wrap: anywhere;     /* บังคับตัดบรรทัดได้ */
+  word-break: keep-all;        /* ไทย/อังกฤษสวยขึ้น */
+}
+
+/* กล่องค้นหาไม่ชนขอบ */
+#panel-search #search-stop{
+  border-radius: 12px;
+  padding: .65rem .9rem;
+}
