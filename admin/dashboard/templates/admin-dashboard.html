@@ -36,6 +36,7 @@
     <!-- ซ้าย -->
     <aside class="side">
       <div class="side-item active" id="btn-search">ค้นหา</div>
+      <div class="side-item" id="btn-buses">รถเมล์</div>
       <div class="side-item" id="btn-stops">ป้าย</div>
       <div class="side-item" id="btn-routes">สาย</div>
       <div class="side-item" id="btn-settings">ตั้งค่า</div>
@@ -69,6 +70,46 @@
                   </div>
                 </div>
               </div>
+
+
+              <!-- รถเมล์ -->
+              <div id="panel-buses" class="panel-content" hidden>
+                <h3 class="mb-3 d-flex align-items-center gap-2">
+                  รถเมล์
+                  <button id="bus-refresh" class="btn btn-outline-secondary btn-sm ms-auto">รีเฟรช</button>
+                </h3>
+
+                <!-- สร้างคันใหม่ -->
+                <div class="p-3 mb-3 rounded-3 shadow-sm" style="background:#fff">
+                  <div class="row g-2">
+                    <div class="col-4"><input id="nb-code"   class="form-control form-control-sm" placeholder="รหัสรถ (เช่น A1)"></div>
+                    <div class="col-4"><input id="nb-plate"  class="form-control form-control-sm" placeholder="ทะเบียน"></div>
+                    <div class="col-4"><input id="nb-driver" class="form-control form-control-sm" placeholder="คนขับ"></div>
+                    <div class="col-4">
+                      <select id="nb-status" class="form-select form-select-sm">
+                        <option value="active">active</option>
+                        <option value="inactive">inactive</option>
+                        <option value="maintenance">maintenance</option>
+                      </select>
+                    </div>
+                    <div class="col-4"><input id="nb-lat" class="form-control form-control-sm" placeholder="Lat"></div>
+                    <div class="col-4"><input id="nb-lng" class="form-control form-control-sm" placeholder="Lng"></div>
+                  </div>
+                  <div class="d-flex gap-2 mt-2">
+                    <button id="nb-pick"   class="btn btn-outline-secondary btn-sm">เลือกจุดบนแผนที่</button>
+                    <button id="nb-create" class="btn btn-primary btn-sm">เพิ่มรถ</button>
+                  </div>
+                </div>
+
+                <!-- ค้นหา -->
+                <input id="buses-search" class="form-control form-control-sm mb-2" placeholder="ค้นหาโค้ด/ทะเบียน/คนขับ…">
+
+                <!-- รายการรถ -->
+                <div id="buses-manage" class="d-grid" style="gap:10px"></div>
+              </div>
+
+
+
 
               <!-- ตั้งค่าป้าย (แทนที่หน้า “ค้นหา” เมื่อกดปุ่มป้าย) -->
               <div id="panel-stops" class="panel-content" hidden>
