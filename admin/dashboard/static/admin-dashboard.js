@@ -16,13 +16,14 @@ var j = JSON.stringify;
 /* ===================== globals ===================== */
 var map, stopLayer, busLayer;
 var tempMarker = null;
+var busMarkers = new Map();
 var stopMarkers = new Map();
 var busRefreshTimer = null;
 var currentBase = null;
 
 // ★ ปรับ path รูปให้เป็น absolute ในบริบท /admin
 var stopIcon = L.icon({ iconUrl: "admin-static/stop.png", iconSize: [26,26], iconAnchor:[13,25] });
-var busIcon  = L.icon({ iconUrl: "  admin-static/bus.png",  iconSize: [28,28], iconAnchor:[14,26] });
+var busIcon  = L.icon({ iconUrl: "admin-static/bus.png",  iconSize: [28,28], iconAnchor:[14,26] });
 
 /* -------- Settings (defaults + persistence) -------- */
 var defaultSettings = {
@@ -123,11 +124,13 @@ function setBaseLayer(style){
 /* ===================== panels switch ===================== */
 function showPanel(which){
   var pSearch = $("#panel-search");
+  var pBuses  = $("#panel-buses");
   var pStops  = $("#panel-stops");
   var pSet    = $("#panel-settings");
   var pRoutes = $("#panel-routes"); // ★
 
   if (pSearch) pSearch.hidden = (which !== "search");
+  if (pBuses)  pBuses.hidden  = (which !== "buses");
   if (pStops)  pStops.hidden  = (which !== "stops");
   if (pSet)    pSet.hidden    = (which !== "settings");
   if (pRoutes) pRoutes.hidden = (which !== "routes"); // ★
@@ -140,6 +143,7 @@ function setActiveSide(target){
 }
 function wireSideMenuPanels(){
   var btnSearch   = $("#btn-search");
+  var btnBuses    = $("#btn-buses");
   var btnStops    = $("#btn-stops");
   var btnSettings = $("#btn-settings");
   var btnRoutes   = $("#btn-routes"); // ★ optional
@@ -148,6 +152,13 @@ function wireSideMenuPanels(){
     btnSearch.addEventListener("click", function(){
       setActiveSide(btnSearch);
       showPanel("search");
+    });
+  }
+  if (btnBuses){ // ← ใหม่
+    btnBuses.addEventListener("click", ()=>{
+      setActiveSide(btnBuses);
+      showPanel("buses");
+      populateBusesPanel().then(bindBusesPanelButtonsOnce);
     });
   }
   if (btnStops){
@@ -301,11 +312,12 @@ function renderBuses(){
     var el = $("#kpi-online"); if(el) el.textContent = String(online);
 
     busLayer.clearLayers();
+    busMarkers.clear();
 
     data.forEach(function(b){
       var lat = (typeof b.lat==="number") ? b.lat : 13.729 + Math.random()*0.002;
       var lng = (typeof b.lng==="number") ? b.lng : 100.776 + Math.random()*0.002;
-      var m = L.marker([lat,lng], {icon:busIcon}).addTo(busLayer);
+      var m = L.marker([lat,lng], {icon: busIcon}).addTo(busLayer);
 
       if(settings.showBusLabels){
         var code = b.code || b.line || ("BUS-"+b.id);
@@ -314,9 +326,12 @@ function renderBuses(){
 
       m.bindPopup(busPopupHtml(b), {autoPan:true});
       m.on("popupopen", function(){ bindBusPopupEvents(m, b); });
+
+      busMarkers.set(String(b.id), m);
     });
   });
 }
+
 function busPopupHtml(b){
   var bid = String(b.id || "new");
   var code = b.code || b.line || ("BUS-"+bid);
@@ -748,4 +763,123 @@ async function rtSaveNew(){
   var nm = $("#rt-new-name"); if (nm) nm.value = "";
   rtCancelDraw();
   rtPopulatePanel();
+}
+
+/* ============ Buses Panel (จัดการรถ) ============ */
+function populateBusesPanel(){
+  const wrap = $("#buses-manage");
+  if (!wrap) return Promise.resolve();
+
+  return api("/admin/api/buses").catch(()=>[]).then(buses=>{
+    if (!Array.isArray(buses)) buses = [];
+    wrap.innerHTML = "";
+
+    buses.forEach(b=>{
+      const card = document.createElement("div");
+      card.className = "p-2 rounded shadow-sm";
+      card.style.background = "#fff";
+      card.innerHTML = `
+        <div class="small text-muted mb-1">#${b.id}</div>
+        <div class="row g-1 align-items-center">
+          <div class="col-4"><input class="form-control form-control-sm" id="bb-code-${b.id}"   value="${esc(b.code||b.line||"")}" placeholder="รหัสรถ"></div>
+          <div class="col-4"><input class="form-control form-control-sm" id="bb-plate-${b.id}"  value="${esc(b.plate||"")}"     placeholder="ทะเบียน"></div>
+          <div class="col-4"><input class="form-control form-control-sm" id="bb-driver-${b.id}" value="${esc(b.driver||"")}"    placeholder="คนขับ"></div>
+          <div class="col-4">
+            <select id="bb-status-${b.id}" class="form-select form-select-sm">
+              <option ${b.status==="active"?"selected":""} value="active">active</option>
+              <option ${b.status==="inactive"?"selected":""} value="inactive">inactive</option>
+              <option ${b.status==="maintenance"?"selected":""} value="maintenance">maintenance</option>
+            </select>
+          </div>
+          <div class="col-4"><input class="form-control form-control-sm" id="bb-lat-${b.id}" value="${typeof b.lat==="number"?b.lat:""}" placeholder="Lat"></div>
+          <div class="col-4"><input class="form-control form-control-sm" id="bb-lng-${b.id}" value="${typeof b.lng==="number"?b.lng:""}" placeholder="Lng"></div>
+        </div>
+        <div class="d-flex gap-2 mt-2">
+          <button class="btn btn-primary btn-sm" id="bb-save-${b.id}">บันทึก</button>
+          <button class="btn btn-outline-danger btn-sm" id="bb-del-${b.id}">ลบ</button>
+          <button class="btn btn-outline-secondary btn-sm ms-auto" id="bb-focus-${b.id}">โฟกัสบนแผนที่</button>
+        </div>
+      `;
+      wrap.appendChild(card);
+
+      $("#bb-save-"+b.id)?.addEventListener("click", async ()=>{
+        const payload = {
+          code   : $("#bb-code-"+b.id)?.value.trim() || b.code,
+          plate  : $("#bb-plate-"+b.id)?.value.trim() || "",
+          driver : $("#bb-driver-"+b.id)?.value.trim() || "",
+          status : $("#bb-status-"+b.id)?.value || b.status,
+          lat    : parseFloat($("#bb-lat-"+b.id)?.value),
+          lng    : parseFloat($("#bb-lng-"+b.id)?.value),
+        };
+        if (Number.isNaN(payload.lat) || Number.isNaN(payload.lng)) { delete payload.lat; delete payload.lng; }
+        await api(`/admin/api/buses/${b.id}`, {method:"PUT", body: JSON.stringify(payload)});
+        await renderBuses();
+      });
+
+      $("#bb-del-"+b.id)?.addEventListener("click", async ()=>{
+        if (!confirm(`ลบรถ #${b.id}?`)) return;
+        await api(`/admin/api/buses/${b.id}`, {method:"DELETE"});
+        await populateBusesPanel();
+        await renderBuses();
+      });
+
+      $("#bb-focus-"+b.id)?.addEventListener("click", ()=>{
+        const m = busMarkers.get(String(b.id));
+        if (m){ map.setView(m.getLatLng(), 18); m.openPopup(); }
+      });
+    });
+  });
+}
+
+function bindBusesPanelButtonsOnce(){
+  const pick  = $("#nb-pick");
+  const add   = $("#nb-create");
+  const find  = $("#buses-search");
+  const rfBtn = $("#bus-refresh");
+
+  if (rfBtn && !rfBtn._wired){
+    rfBtn._wired = true;
+    rfBtn.addEventListener("click", ()=> populateBusesPanel().then(renderBuses));
+  }
+
+  if (pick && !pick._wired){
+    pick._wired = true;
+    pick.addEventListener("click", ()=>{
+      const c = map.getContainer(); c.style.cursor = "crosshair";
+      const once = (e)=>{ map.off("click", once); c.style.cursor=""; 
+        $("#nb-lat").value = e.latlng.lat.toFixed(6);
+        $("#nb-lng").value = e.latlng.lng.toFixed(6);
+      };
+      map.once("click", once);
+    });
+  }
+
+  if (add && !add._wired){
+    add._wired = true;
+    add.addEventListener("click", async ()=>{
+      const payload = {
+        code   : $("#nb-code")?.value.trim(),
+        plate  : $("#nb-plate")?.value.trim(),
+        driver : $("#nb-driver")?.value.trim(),
+        status : $("#nb-status")?.value || "active",
+        lat    : parseFloat($("#nb-lat")?.value),
+        lng    : parseFloat($("#nb-lng")?.value),
+      };
+      if (Number.isNaN(payload.lat) || Number.isNaN(payload.lng)){ alert("กรุณากำหนด Lat/Lng ให้ถูกต้อง"); return; }
+      await api("/admin/api/buses", {method:"POST", body: JSON.stringify(payload)});
+      ["nb-code","nb-plate","nb-driver","nb-lat","nb-lng"].forEach(id=>{ const el=$("#"+id); if(el) el.value=""; });
+      await populateBusesPanel();
+      await renderBuses();
+    });
+  }
+
+  if (find && !find._wired){
+    find._wired = true;
+    find.addEventListener("input", ()=>{
+      const q = (find.value||"").toLowerCase().trim();
+      $("#buses-manage")?.querySelectorAll("> div").forEach(card=>{
+        card.style.display = card.textContent.toLowerCase().includes(q) ? "" : "none";
+      });
+    });
+  }
 }
