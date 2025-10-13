@@ -93,6 +93,31 @@
           </div>
 
 
+          <!-- Routes Panel (เหมือนหน้าป้าย) -->
+          <div id="panel-routes" class="panel-content" hidden>
+            <h3 class="mb-3">ตั้งค่าสาย (Routes)</h3>
+
+            <!-- ฟอร์มสร้างสายใหม่ -->
+            <div class="row g-2 mb-3">
+              <div class="col-md-5">
+                <input id="rt-new-name" class="form-control" placeholder="ชื่อสายใหม่ เช่น วนหลัก">
+              </div>
+              <div class="col-md-3">
+                <input id="rt-new-color" type="color" class="form-control form-control-color" value="#2f6cf7">
+              </div>
+              <div class="col-md-4 d-flex gap-2">
+                <button id="rt-new-draw"   class="btn btn-outline-primary w-50">วาดเส้นใหม่</button>
+                <button id="rt-new-save"   class="btn btn-primary w-50" disabled>บันทึกสาย</button>
+                <button id="rt-new-cancel" class="btn btn-outline-secondary" disabled>ยกเลิก</button>
+              </div>
+            </div>
+
+  <!-- ค้นหา + รายการสาย (เหมือนป้าย) -->
+  <input id="routes-search" class="form-control mb-2" placeholder="ค้นหาในรายการสาย...">
+  <div id="routes-manage" class="d-grid" style="grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 12px;"></div>
+</div>
+
+
 
           <!-- Settings Panel (ซ่อนก่อน) -->
           <div id="panel-settings" class="panel-content" hidden>

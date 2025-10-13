@@ -20,8 +20,9 @@ var stopMarkers = new Map();
 var busRefreshTimer = null;
 var currentBase = null;
 
+// ★ ปรับ path รูปให้เป็น absolute ในบริบท /admin
 var stopIcon = L.icon({ iconUrl: "admin-static/stop.png", iconSize: [26,26], iconAnchor:[13,25] });
-var busIcon  = L.icon({ iconUrl: "admin-static/bus.png",  iconSize: [28,28], iconAnchor:[14,26] });
+var busIcon  = L.icon({ iconUrl: "  admin-static/bus.png",  iconSize: [28,28], iconAnchor:[14,26] });
 
 /* -------- Settings (defaults + persistence) -------- */
 var defaultSettings = {
@@ -39,10 +40,8 @@ function loadSettings(){
     var raw = localStorage.getItem("adminSettings");
     if(!raw) return JSON.parse(JSON.stringify(defaultSettings));
     var obj = JSON.parse(raw);
-    // merge อย่างปลอดภัย
     var out = JSON.parse(JSON.stringify(defaultSettings));
     Object.keys(obj||{}).forEach(function(k){ out[k] = obj[k]; });
-    // ตรวจค่า
     if(!(out.center && out.center.length===2)) out.center = defaultSettings.center.slice();
     if(typeof out.zoom !== "number") out.zoom = defaultSettings.zoom;
     if(typeof out.refreshSec !== "number" || out.refreshSec<1) out.refreshSec = defaultSettings.refreshSec;
@@ -75,6 +74,9 @@ window.addEventListener("DOMContentLoaded", function(){
     stopLayer = L.layerGroup().addTo(map);
     busLayer  = L.layerGroup().addTo(map);
 
+    // ★ Routes layers
+    rtInitLayers();
+
     setTimeout(function(){ map.invalidateSize(); }, 200);
     window.addEventListener("resize", function(){
       mapEl.style.height = Math.max(480, Math.round(window.innerHeight*0.75)) + "px";
@@ -88,7 +90,7 @@ window.addEventListener("DOMContentLoaded", function(){
     var searchEl = $("#search-stop");
     if (searchEl) searchEl.addEventListener("input", filterStopList);
 
-    wireSideMenuPanels();   // ค้นหา / ป้าย / ตั้งค่า
+    wireSideMenuPanels();   // ค้นหา / ป้าย / ตั้งค่า / ★ สาย
   }catch(e){
     console.error("boot error:", e);
   }
@@ -96,7 +98,6 @@ window.addEventListener("DOMContentLoaded", function(){
 
 /* ===================== base layers ===================== */
 function setBaseLayer(style){
-  // ลบ layer เก่า
   if(currentBase){ map.removeLayer(currentBase); currentBase = null; }
 
   if(style==="carto"){
@@ -111,7 +112,6 @@ function setBaseLayer(style){
       attribution:"Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap"
     });
   }else{
-    // osm default
     currentBase = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
       maxZoom: 20,
       attribution:"© OpenStreetMap contributors"
@@ -125,9 +125,12 @@ function showPanel(which){
   var pSearch = $("#panel-search");
   var pStops  = $("#panel-stops");
   var pSet    = $("#panel-settings");
+  var pRoutes = $("#panel-routes"); // ★
+
   if (pSearch) pSearch.hidden = (which !== "search");
   if (pStops)  pStops.hidden  = (which !== "stops");
   if (pSet)    pSet.hidden    = (which !== "settings");
+  if (pRoutes) pRoutes.hidden = (which !== "routes"); // ★
 }
 function setActiveSide(target){
   var items = document.querySelectorAll(".side .side-item");
@@ -139,6 +142,7 @@ function wireSideMenuPanels(){
   var btnSearch   = $("#btn-search");
   var btnStops    = $("#btn-stops");
   var btnSettings = $("#btn-settings");
+  var btnRoutes   = $("#btn-routes"); // ★ optional
 
   if (btnSearch){
     btnSearch.addEventListener("click", function(){
@@ -157,8 +161,16 @@ function wireSideMenuPanels(){
     btnSettings.addEventListener("click", function(){
       setActiveSide(btnSettings);
       showPanel("settings");
-      populateSettingsPanel();   // ← โหลดค่าลงฟอร์ม
-      bindSettingsButtonsOnce(); // ← ผูกปุ่มครั้งเดียว
+      populateSettingsPanel();
+      bindSettingsButtonsOnce();
+    });
+  }
+  if (btnRoutes){
+    btnRoutes.addEventListener("click", function(){
+      setActiveSide(btnRoutes);
+      showPanel("routes");
+      rtPopulatePanel();          // ★ โหลดรายการสาย + วาดเส้นทั้งหมด
+      rtBindPanelOnce();          // ★ ผูกปุ่มสำหรับ routes (ครั้งเดียว)
     });
   }
 }
@@ -180,7 +192,6 @@ function renderStops(){
       var marker = L.marker([s.lat, s.lng], { icon: stopIcon, draggable:true }).addTo(stopLayer);
       stopMarkers.set(String(s.id), marker);
 
-      // label ชื่อป้าย (ตาม settings)
       if(settings.showStopLabels){
         marker.bindTooltip(s.name || ("Stop "+s.id), {permanent:true, direction:"top", className:"stop-label", offset:[0,-10]}).openTooltip();
       }
@@ -190,7 +201,7 @@ function renderStops(){
 
       marker.on("drag", function(e){
         var ll = e.target.getLatLng();
-        syncPanelStopLatLng(s.id, ll.lat, ll.lng);  // อัปเดต panel แบบสด
+        syncPanelStopLatLng(s.id, ll.lat, ll.lng);
       });
       marker.on("dragend", function(e){
         var ll = e.target.getLatLng();
@@ -257,7 +268,6 @@ function bindStopPopupEvents(marker, s){
     api("/admin/api/stops/"+s.id, {method:"PUT", body:j({name:name, lat:lat, lng:lng})})
       .then(function(){
         marker.setLatLng([lat,lng]);
-        // อัปเดต label ถ้ามี
         if(settings.showStopLabels){
           marker.unbindTooltip();
           marker.bindTooltip(name||("Stop "+s.id), {permanent:true, direction:"top", className:"stop-label", offset:[0,-10]}).openTooltip();
@@ -297,7 +307,6 @@ function renderBuses(){
       var lng = (typeof b.lng==="number") ? b.lng : 100.776 + Math.random()*0.002;
       var m = L.marker([lat,lng], {icon:busIcon}).addTo(busLayer);
 
-      // label ชื่อรถ (ตาม settings)
       if(settings.showBusLabels){
         var code = b.code || b.line || ("BUS-"+b.id);
         m.bindTooltip(code, {permanent:true, direction:"top", className:"bus-label", offset:[0,-10]}).openTooltip();
@@ -482,13 +491,13 @@ function bindStopsPanelButtonsOnce(){
 
 /* ===================== Settings Panel ===================== */
 function populateSettingsPanel(){
-  $("#set-map-style").value = settings.mapStyle;
-  $("#set-refresh").value   = String(settings.refreshSec);
-  $("#set-zoom").value      = String(settings.zoom);
-  $("#set-center-lat").value = settings.center[0].toFixed(6);
-  $("#set-center-lng").value = settings.center[1].toFixed(6);
-  $("#set-show-bus-labels").checked  = !!settings.showBusLabels;
-  $("#set-show-stop-labels").checked = !!settings.showStopLabels;
+  if($("#set-map-style")) $("#set-map-style").value = settings.mapStyle;
+  if($("#set-refresh"))   $("#set-refresh").value   = String(settings.refreshSec);
+  if($("#set-zoom"))      $("#set-zoom").value      = String(settings.zoom);
+  if($("#set-center-lat")) $("#set-center-lat").value = settings.center[0].toFixed(6);
+  if($("#set-center-lng")) $("#set-center-lng").value = settings.center[1].toFixed(6);
+  if($("#set-show-bus-labels"))  $("#set-show-bus-labels").checked  = !!settings.showBusLabels;
+  if($("#set-show-stop-labels")) $("#set-show-stop-labels").checked = !!settings.showStopLabels;
 }
 function bindSettingsButtonsOnce(){
   var saveBtn = $("#set-save");
@@ -503,8 +512,8 @@ function bindSettingsButtonsOnce(){
         map.off("click", once);
         c.style.cursor="";
         var lat=e.latlng.lat, lng=e.latlng.lng;
-        $("#set-center-lat").value = lat.toFixed(6);
-        $("#set-center-lng").value = lng.toFixed(6);
+        if($("#set-center-lat")) $("#set-center-lat").value = lat.toFixed(6);
+        if($("#set-center-lng")) $("#set-center-lng").value = lng.toFixed(6);
         if(tempMarker){ map.removeLayer(tempMarker); tempMarker=null; }
         tempMarker = L.marker([lat,lng], {icon:stopIcon}).addTo(map);
         setTimeout(function(){ if(tempMarker){ map.removeLayer(tempMarker); tempMarker=null; } }, 2500);
@@ -518,13 +527,13 @@ function bindSettingsButtonsOnce(){
   if(saveBtn && !saveBtn._wired){
     saveBtn._wired = true;
     saveBtn.addEventListener("click", function(){
-      var ms   = $("#set-map-style").value || "osm";
-      var rf   = parseInt($("#set-refresh").value,10);
-      var zoom = parseInt($("#set-zoom").value,10);
-      var lat  = parseFloat($("#set-center-lat").value);
-      var lng  = parseFloat($("#set-center-lng").value);
-      var busL = $("#set-show-bus-labels").checked;
-      var stopL= $("#set-show-stop-labels").checked;
+      var ms   = $("#set-map-style") ? $("#set-map-style").value : "osm";
+      var rf   = $("#set-refresh")   ? parseInt($("#set-refresh").value,10) : defaultSettings.refreshSec;
+      var zoom = $("#set-zoom")      ? parseInt($("#set-zoom").value,10)    : defaultSettings.zoom;
+      var lat  = $("#set-center-lat")? parseFloat($("#set-center-lat").value): settings.center[0];
+      var lng  = $("#set-center-lng")? parseFloat($("#set-center-lng").value): settings.center[1];
+      var busL = $("#set-show-bus-labels")  ? $("#set-show-bus-labels").checked  : settings.showBusLabels;
+      var stopL= $("#set-show-stop-labels") ? $("#set-show-stop-labels").checked : settings.showStopLabels;
 
       if(isNaN(rf)||rf<1) rf = defaultSettings.refreshSec;
       if(isNaN(zoom)||zoom<3||zoom>20) zoom = defaultSettings.zoom;
@@ -560,7 +569,6 @@ function applySettings(changeTile, changeTimer){
   map.setView(settings.center, settings.zoom);
 
   if(changeTimer){ startBusTimer(); }
-  // re-render เพื่อให้ label ตาม toggle
   renderStops();
   renderBuses();
 }
@@ -583,29 +591,161 @@ function filterStopList(){
 
 // ===== Theme toggle (Light/Dark) =====
 (function(){
-  var KEY = "adminTheme"; // เก็บลง localStorage
+  var KEY = "adminTheme";
   var btn = document.getElementById("btn-theme");
-
   function apply(theme){
     var t = (theme === "dark") ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", t);
     if (btn) btn.textContent = (t === "dark") ? "☀️" : "🌙";
   }
-
-  // โหลดธีมเดิม
   var saved = localStorage.getItem(KEY) || "light";
   apply(saved);
-
-  // กดปุ่มเพื่อสลับ
   if (btn){
     btn.addEventListener("click", function(){
       var now = (localStorage.getItem(KEY) || "light");
       var next = (now === "dark") ? "light" : "dark";
       localStorage.setItem(KEY, next);
       apply(next);
-
-      // (ตัวเลือก) ถ้าอยากให้แผนที่เปลี่ยนเป็นโทนเข้มอัตโนมัติ ให้เรียก render ใหม่
-      // renderStops(); renderBuses();
     });
   }
 })();
+
+/* ===================================================== */
+/* ==================== ROUTES (สาย) =================== */
+/* ===================================================== */
+
+// 3.1/3.2: เลเยอร์ + render + โหลดรายการ
+let rtLayer, rtWorkLayer;
+let rtDrawing = false, rtWorkCoords = [];
+let rtWorkLine = null;
+
+function rtInitLayers(){
+  rtLayer = L.layerGroup().addTo(map);
+  rtWorkLayer = L.layerGroup().addTo(map);
+}
+function rtRenderRoutesOnMap(list){
+  if (!rtLayer) return;
+  rtLayer.clearLayers();
+  (list||[]).forEach(function(r){
+    if (Array.isArray(r.path) && r.path.length >= 2){
+      L.polyline(r.path, {color: r.color || "#2f6cf7", weight:5, opacity:.9})
+        .addTo(rtLayer)
+        .bindTooltip(r.name || ("Route "+r.id), {direction:"top"});
+    }
+  });
+}
+function rtPopulatePanel(){
+  var box = $("#routes-manage");
+  if (!box) return Promise.resolve();
+
+  return api("/admin/api/routes").then(function(list){
+    rtRenderRoutesOnMap(list||[]);
+    var k = $("#kpi-routes"); if (k) k.textContent = String((list||[]).length || "—");
+
+    box.innerHTML = "";
+    (list||[]).forEach(function(r){
+      var card = document.createElement("div");
+      card.className = "panel p-3";
+      card.innerHTML =
+        '<div class="small text-muted mb-1">#'+r.id+' · จุดเส้น: '+(Array.isArray(r.path)?r.path.length:0)+'</div>'+
+        '<div class="row g-1 align-items-center">'+
+          '<div class="col-8"><input id="pr-name-'+r.id+'" class="form-control form-control-sm" value="'+esc(r.name||"")+'"></div>'+
+          '<div class="col-4"><input id="pr-color-'+r.id+'" type="color" class="form-control form-control-color form-control-sm" value="'+esc(r.color||"#2f6cf7")+'"></div>'+
+        '</div>'+
+        '<div class="d-flex gap-2 mt-2">'+
+          '<button class="btn btn-primary btn-sm" id="pr-save-'+r.id+'">บันทึก</button>'+
+          '<button class="btn btn-outline-danger btn-sm" id="pr-del-'+r.id+'">ลบ</button>'+
+          '<button class="btn btn-outline-secondary btn-sm ms-auto" id="pr-focus-'+r.id+'">โฟกัส</button>'+
+        '</div>';
+      box.appendChild(card);
+
+      $("#pr-save-"+r.id)?.addEventListener("click", async function(){
+        var name  = ($("#pr-name-"+r.id).value || "").trim();
+        var color = $("#pr-color-"+r.id).value || "#2f6cf7";
+        await api("/admin/api/routes/"+r.id, {method:"PUT", body:j({name:name, color:color})}).catch(console.error);
+        rtPopulatePanel();
+      });
+      $("#pr-del-"+r.id)?.addEventListener("click", async function(){
+        if(!confirm('ลบสาย "'+(r.name||"")+'"?')) return;
+        await api("/admin/api/routes/"+r.id, {method:"DELETE"}).catch(console.error);
+        rtPopulatePanel();
+      });
+      $("#pr-focus-"+r.id)?.addEventListener("click", function(){
+        if (r.path && r.path.length){
+          map.fitBounds(L.polyline(r.path).getBounds(), {padding:[20,20]});
+        }
+      });
+    });
+  }).catch(function(e){
+    console.error(e);
+  });
+}
+
+// 3.3: ผูกปุ่มใน panel routes (ค้นหา + วาด/บันทึก/ยกเลิก)
+function rtBindPanelOnce(){
+  var search = $("#routes-search");
+  if (search && !search._wired){
+    search._wired = true;
+    search.addEventListener("input", function(){
+      var q = (search.value || "").trim().toLowerCase();
+      document.querySelectorAll("#routes-manage > .panel").forEach(function(card){
+        card.style.display = card.textContent.toLowerCase().includes(q) ? "" : "none";
+      });
+    });
+  }
+  var bDraw   = $("#rt-new-draw");
+  var bSave   = $("#rt-new-save");
+  var bCancel = $("#rt-new-cancel");
+
+  if (bDraw && !bDraw._wired){   bDraw._wired   = true; bDraw.addEventListener("click", rtStartDraw); }
+  if (bSave && !bSave._wired){   bSave._wired   = true; bSave.addEventListener("click", rtSaveNew); }
+  if (bCancel && !bCancel._wired){ bCancel._wired = true; bCancel.addEventListener("click", rtCancelDraw); }
+}
+
+// 3.4: วาดเส้นใหม่ / save / cancel
+function rtStartDraw(){
+  if (rtDrawing) return;
+  rtDrawing = true; rtWorkCoords = [];
+  rtWorkLayer.clearLayers();
+
+  var color = $("#rt-new-color")?.value || "#2f6cf7";
+  rtWorkLine = L.polyline([], {color: color, weight:5, dashArray:"6,6"}).addTo(rtWorkLayer);
+
+  map.getContainer().style.cursor = "crosshair";
+  map.on("click", rtDrawClick);
+  document.addEventListener("keydown", rtDrawKeys);
+
+  if($("#rt-new-save"))   $("#rt-new-save").disabled   = false;
+  if($("#rt-new-cancel")) $("#rt-new-cancel").disabled = false;
+}
+function rtDrawClick(e){
+  rtWorkCoords.push([e.latlng.lat, e.latlng.lng]);
+  rtWorkLine.setLatLngs(rtWorkCoords);
+}
+function rtDrawKeys(e){
+  if (!rtDrawing) return;
+  if (e.key === "Escape"){ rtCancelDraw(); }
+  if (e.key === "Backspace" || e.key === "Delete"){
+    rtWorkCoords.pop(); rtWorkLine.setLatLngs(rtWorkCoords);
+  }
+}
+function rtCancelDraw(){
+  rtDrawing = false;
+  map.off("click", rtDrawClick);
+  document.removeEventListener("keydown", rtDrawKeys);
+  map.getContainer().style.cursor = "";
+  rtWorkLayer.clearLayers(); rtWorkCoords = [];
+  if($("#rt-new-save"))   $("#rt-new-save").disabled   = true;
+  if($("#rt-new-cancel")) $("#rt-new-cancel").disabled = true;
+}
+async function rtSaveNew(){
+  var name  = ($("#rt-new-name")?.value || "").trim() || "Route";
+  var color = $("#rt-new-color")?.value || "#2f6cf7";
+  if (!rtDrawing || rtWorkCoords.length < 2){
+    alert("ยังไม่ได้วาดเส้นทาง (อย่างน้อย 2 จุด)"); return;
+  }
+  await api("/admin/api/routes", {method:"POST", body:j({name:name, color:color, path: rtWorkCoords})}).catch(console.error);
+  var nm = $("#rt-new-name"); if (nm) nm.value = "";
+  rtCancelDraw();
+  rtPopulatePanel();
+}

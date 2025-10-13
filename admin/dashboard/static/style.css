@@ -414,3 +414,8 @@ body{
   border-radius: 12px;
   padding: .65rem .9rem;
 }
+
+/* Routes: ทำให้ช่องเลือกสีเตี้ยพอดีมือ */
+#panel-routes .form-control-color{ width:100%; height:2.2rem; padding:0; }
+
+/* การ์ดในรายการสาย ใช้ .panel เดิมได้ ไม่ต้องเพิ่มก็สวยแล้ว */
