@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>โปรไฟล์ & การตั้งค่า</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>บัญชีของฉัน</h2>
+
+    <!-- แท็บ -->
+    <div class="tab">
+      <button class="tab-link active" data-tab="profile">Profile</button>
+      <button class="tab-link" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- Profile Tab -->
+    <div id="profile" class="tab-content active">
+      <div class="profile-pic">
+        <img src="https://via.placeholder.com/100" alt="Profile Picture">
+      </div>
+      <form>
+        <label for="name">ชื่อ</label>
+        <input type="text" id="name" name="name" placeholder="ชื่อของคุณ">
+
+        <label for="email">อีเมล</label>
+        <input type="email" id="email" name="email" placeholder="อีเมลของคุณ">
+
+        <label for="password">รหัสผ่าน</label>
+        <input type="password" id="password" name="password" placeholder="รหัสผ่านใหม่">
+
+        <button type="submit" class="save-btn">บันทึกการเปลี่ยนแปลง</button>
+      </form>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="settings" class="tab-content">
+      <form class="settings">
+        <label><input type="checkbox" name="notifications"> รับการแจ้งเตือนทางอีเมล</label>
+        
+
+        <button type="submit" class="save-btn">บันทึกการตั้งค่า</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
