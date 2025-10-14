@@ -4,19 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KMITL Shuttle Tracking</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="container">
     <!-- Sidebar -->
     <div class="sidebar">
+
+      <button class="menu-item active" onclick="showPanel(event, 'search')">🔍<br>ค้นหา</button>
+      <button class="menu-item" onclick="showPanel(event, 'stops')">📍<br>ป้าย</button>
+      <button class="menu-item" onclick="showPanel(event, 'lines')">🚌<br>สาย</button>
+      <button class="menu-item" onclick="showPanel(event, 'settings')">⚙️<br>ตั้งค่า</button>
+      <button class="menu-item" onclick="showPanel(event, 'profile')">👤<br>ผู้ใช้งาน</button>
+
       <button class="menu-item active" onclick="showPanel('search')">🔍<br>ค้นหา</button>
       <button class="menu-item" onclick="showPanel('stops')">📍<br>ป้าย</button>
       <button class="menu-item" onclick="showPanel('lines')">🚌<br>สาย</button>
       <button class="menu-item" onclick="showPanel('settings')">⚙️<br>ตั้งค่า</button>
       <button class="menu-item" onclick="showPanel('profile')">👤<br>ผู้ใช้งาน</button>
+
     </div>
 
     <!-- Panel -->
@@ -46,6 +58,15 @@
         </a>
 
       </div>
+
+
+      <div id="profile-panel" class="panel-content">
+        <h3>👤 ผู้ใช้งาน</h3>
+        <button onclick="location.href='{{ url_for('login') }}'" class="btn-login">เข้าสู่ระบบ</button>
+        <button onclick="location.href='{{ url_for('register') }}'" class="btn-register">สมัครสมาชิก</button>
+      </div>
+    </div>
+
         
          
 
@@ -53,106 +74,13 @@
     
 
 
+
     
     <!-- Map -->
     <div id="map"></div>
   </div>
 
-  <script>
-    // Map
-    var map = L.map('map').setView([13.729, 100.776], 16);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // Custom icons
-    var busIcon = L.icon({
-      iconUrl: "{{ url_for('static', filename='bus.png') }}",
-      iconSize: [32, 32]
-    });
-
-    var stopIcon = L.icon({
-      iconUrl: "{{ url_for('static', filename='stop.png') }}",
-      iconSize: [28, 28]
-    });
-
-    var busMarkers = {};
-    var stopMarkers = [];
-
-    // โหลดป้ายรถเมล์
-    fetch("/api/stops")
-      .then(res => res.json())
-      .then(stops => {
-        let stopList = document.getElementById("stopList");
-        let allStops = document.getElementById("allStops");
-
-        stops.forEach((s, i) => {
-          // เพิ่ม marker
-          let marker = L.marker([s.lat, s.lng], {icon: stopIcon})
-            .addTo(map)
-            .bindPopup(s.name);
-          stopMarkers.push({name: s.name, marker: marker});
-
-          // เพิ่มใน list
-          let li1 = document.createElement("li");
-          li1.innerText = s.name;
-          li1.onclick = () => map.setView([s.lat, s.lng], 18);
-          stopList.appendChild(li1);
-
-          let li2 = li1.cloneNode(true);
-          li2.onclick = () => map.setView([s.lat, s.lng], 18);
-          allStops.appendChild(li2);
-        });
-      });
-
-    // โหลดรถบัส
-    function loadBuses() {
-      fetch("/api/buses")
-        .then(res => res.json())
-        .then(data => {
-          data.forEach(bus => {
-            let key = bus.id;
-            if (busMarkers[key]) {
-              busMarkers[key].setLatLng([bus.lat, bus.lng]);
-            } else {
-              busMarkers[key] = L.marker([bus.lat, bus.lng], {icon: busIcon})
-                .addTo(map)
-                .bindPopup("สาย " + bus.line);
-            }
-          });
-        });
-    }
-    loadBuses();
-    setInterval(loadBuses, 5000);
-
-    // Sidebar switching
-    function showPanel(panel) {
-      document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.panel-content').forEach(el => el.classList.remove('active'));
-
-      if (panel === 'search') {
-        document.querySelector('#search-panel').classList.add('active');
-      } else if (panel === 'stops') {
-        document.querySelector('#stops-panel').classList.add('active');
-      } else if (panel === 'lines') {
-        document.querySelector('#lines-panel').classList.add('active');
-      } else if (panel === 'settings') {
-        document.querySelector('#settings-panel').classList.add('active');
-      }
-
-      event.currentTarget.classList.add('active');
-    }
-
-    // Filter search
-    function filterStops() {
-      let filter = document.getElementById("searchBox").value.toLowerCase();
-      let lis = document.getElementById("stopList").getElementsByTagName("li");
-      for (let i = 0; i < lis.length; i++) {
-        let text = lis[i].innerText.toLowerCase();
-        lis[i].style.display = text.includes(filter) ? "" : "none";
-      }
-    }
-  </script>
+  <!-- Custom JS -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
