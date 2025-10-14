@@ -1,32 +1,85 @@
-// สร้างแผนที่ Leaflet
-var map = L.map('map').setView([13.7290, 100.7750], 16);
+// ====== Initialize Map ======
+var map = L.map('map').setView([13.729, 100.776], 16);
 
-// ใช้ OSM เป็นแผนที่พื้นหลัง
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
+  attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// Marker เก็บ bus
+// ====== Custom Icons ======
+var busIcon = L.icon({
+  iconUrl: "/static/bus.png",
+  iconSize: [32, 32]
+});
+
+var stopIcon = L.icon({
+  iconUrl: "/static/stop.png",
+  iconSize: [28, 28]
+});
+
 var busMarkers = {};
+var stopMarkers = [];
 
-// ฟังก์ชันอัปเดตตำแหน่งรถ
-async function updateBusPositions() {
-    let response = await fetch("/get_bus_positions");
-    let buses = await response.json();
+// ====== Load Stops ======
+fetch("/api/stops")
+  .then(res => res.json())
+  .then(stops => {
+    let stopList = document.getElementById("stopList");
+    let allStops = document.getElementById("allStops");
 
-    buses.forEach(bus => {
-        if (busMarkers[bus.bus_id]) {
-            busMarkers[bus.bus_id].setLatLng([bus.lat, bus.lng]);
+    stops.forEach(s => {
+      let marker = L.marker([s.lat, s.lng], { icon: stopIcon })
+        .addTo(map)
+        .bindPopup(s.name);
+      stopMarkers.push({ name: s.name, marker: marker });
+
+      let li1 = document.createElement("li");
+      li1.innerText = s.name;
+      li1.onclick = () => map.setView([s.lat, s.lng], 18);
+      stopList.appendChild(li1);
+
+      let li2 = li1.cloneNode(true);
+      li2.onclick = () => map.setView([s.lat, s.lng], 18);
+      allStops.appendChild(li2);
+    });
+  });
+
+// ====== Load Buses ======
+function loadBuses() {
+  fetch("/api/buses")
+    .then(res => res.json())
+    .then(data => {
+      data.forEach(bus => {
+        let key = bus.id;
+        if (busMarkers[key]) {
+          busMarkers[key].setLatLng([bus.lat, bus.lng]);
         } else {
-            busMarkers[bus.bus_id] = L.marker([bus.lat, bus.lng])
-                .addTo(map)
-                .bindPopup(bus.bus_id);
+          busMarkers[key] = L.marker([bus.lat, bus.lng], { icon: busIcon })
+            .addTo(map)
+            .bindPopup("สาย " + bus.line);
         }
+      });
     });
 }
+loadBuses();
+setInterval(loadBuses, 5000);
 
-// อัปเดตทุก 3 วินาที
-setInterval(updateBusPositions, 3000);
+// ====== Sidebar Switching ======
+function showPanel(event, panel) {
+  document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.panel-content').forEach(el => el.classList.remove('active'));
 
-// โหลดครั้งแรก
-updateBusPositions();
+  document.getElementById(panel + '-panel').classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  setTimeout(() => map.invalidateSize(), 200);
+}
+
+// ====== Filter Search ======
+function filterStops() {
+  let filter = document.getElementById("searchBox").value.toLowerCase();
+  let lis = document.getElementById("stopList").getElementsByTagName("li");
+  for (let i = 0; i < lis.length; i++) {
+    let text = lis[i].innerText.toLowerCase();
+    lis[i].style.display = text.includes(filter) ? "" : "none";
+  }
+}

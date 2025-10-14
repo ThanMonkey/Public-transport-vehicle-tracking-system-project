@@ -1,64 +1,199 @@
-body {
+* {
+  box-sizing: border-box;
   margin: 0;
+  padding: 0;
   font-family: "Prompt", sans-serif;
-  display: flex;
-  height: 100vh;
 }
 
+body {
+  height: 100vh;
+  display: flex;
+  background-color: #f4f6fb;
+  color: #1e293b;
+  overflow: hidden;
+}
+
+/* Layout */
 .container {
   display: flex;
   width: 100%;
-}
-
-.sidebar {
-  width: 70px;
-  background: #ff6600;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 20px;
-}
-
-.menu-item {
-  margin: 20px 0;
-  cursor: pointer;
-  font-size: 14px;
-  text-align: center;
-  border: none;
-  background: none;
-  color: white;
-}
-
-.menu-item.active {
-  border-left: 4px solid white;
-  padding-left: 5px;
-}
-
-.panel {
-  width: 280px;
-  background: #f9f9f9;
-  padding: 15px;
-  overflow-y: auto;
-  border-right: 1px solid #ddd;
-}
-
-.panel-content {
-  display: none;
-}
-
-.panel-content.active {
-  display: block;
-}
-
-#map {
-  flex: 1;
   height: 100vh;
 }
 
+/* Sidebar */
+.sidebar {
+  width: 80px;
+  background: #F26522;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0;
+  gap: 1rem;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.15);
+  transition: width 0.3s ease;
+}
+.sidebar:hover {
+  width: 220px;
+}
+
+.menu-item {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.4;
+  padding: 12px 10px;
+  width: 90%;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+.menu-item:hover {
+  background-color: #334155;
+  color: #fff;
+}
+.menu-item.active {
+  background-color: #0ea5e9;
+  color: white;
+  box-shadow: 0 2px 6px rgba(14,165,233,0.3);
+}
+
+/* Panel */
+.panel {
+  width: 320px;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 1.2rem 1.2rem 2rem;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+.panel h3 {
+  font-size: 18px;
+  margin-bottom: 1rem;
+  color: #0f172a;
+}
+.panel p {
+  color: #475569;
+  margin-bottom: 0.6rem;
+  line-height: 1.5;
+}
+
+/* Panel switching */
+.panel-content {
+  display: none;
+}
+.panel-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Search box */
 #searchBox {
   width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  outline: none;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+#searchBox:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 5px rgba(14,165,233,0.3);
+}
+
+/* List */
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+li {
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+li:hover {
+  background-color: #e0f2fe;
+  transform: translateX(4px);
+}
+
+/* Map */
+#map {
+  flex: 1;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar */
+.panel::-webkit-scrollbar { width: 6px; }
+.panel::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+.panel::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    flex-direction: row;
+    width: 100%;
+    height: 70px;
+    justify-content: space-around;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  }
+  .panel {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 45%;
+    border-right: none;
+    border-top: 1px solid #e2e8f0;
+    background: white;
+  }
+  #map { height: 55%; }
+}
+.btn-login, .btn-register {
+  background-color: #F26522;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  margin: 10px 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.btn-login:hover, .btn-register:hover {
+  background-color: #d45218;
+}
+.map {
+  flex: 1;
+  height: 100vh;
+  width: 100%;
+}
+.panel .panel {
+  margin-top: 20px;
+  background-color: #64748b;
+  color: white;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+.panel .panel:hover {
+  background-color: #475569;
 }
