@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>เข้าสู่ระบบ</title>
-  <link rel="stylesheet" href="stylee.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='stylee.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
 </head>
@@ -24,7 +24,10 @@
       </div>
       <p class="forgot">ลืมรหัสผ่าน</p>
       <button type="submit" class="btn">เข้าสู่ระบบ</button>
-      <button type="button" class="btn secondary" onclick="location.href='register.html'">สมัครสมาชิก</button>
+      <button type="button" class="btn secondary" onclick="location.href='{{ url_for('register') }}'">สมัครสมาชิก</button>
+      <button type="button" class="btn" onclick="location.href='{{ url_for('home') }}'">ย้อนกลับหน้าหลัก</button>
+
+      
     </form>
   </div>
   <script>
