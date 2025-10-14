@@ -94,16 +94,6 @@ body {
   line-height: 1.5;
 }
 
-/* Panel content switching */
-.panel-content {
-  display: none;
-}
-
-.panel-content.active {
-  display: block;
-  animation: fadeIn 0.3s ease;
-}
-
 /* ============================
    🔍 Search Box
 ============================ */
@@ -199,7 +189,26 @@ li:hover {
     background: white;
   }
 
-  #map {
-    height: 55%;
-  }
+  #map { height: 55%; }
+}
+
+.btn-login, .btn-register {
+  background-color: #F26522;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  margin: 10px 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-login:hover, .btn-register:hover {
+  background-color: #d45218;
+}
+
+.map {
+  flex: 1;
+  height: 100vh;
+  width: 100%;
 }
