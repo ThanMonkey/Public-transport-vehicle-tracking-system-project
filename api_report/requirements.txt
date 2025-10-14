@@ -1,0 +1,4 @@
+# รายชื่อไลบรารีที่จำเป็นสำหรับติดตั้ง
+fastapi
+uvicorn[standard]
+pandas
