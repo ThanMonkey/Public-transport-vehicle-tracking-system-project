@@ -175,25 +175,14 @@ li:hover {
   cursor: pointer;
   font-weight: bold;
 }
+
 .btn-login:hover, .btn-register:hover {
   background-color: #d45218;
 }
+
 .map {
   flex: 1;
   height: 100vh;
   width: 100%;
 }
-.panel .panel {
-  margin-top: 20px;
-  background-color: #64748b;
-  color: white;
-  padding: 10px 25px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
-}
-.panel .panel:hover {
-  background-color: #475569;
-}
+
