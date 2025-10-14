@@ -7,12 +7,12 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // ====== Custom Icons ======
 var busIcon = L.icon({
-  iconUrl: "/static/bus.png",
+  iconUrl: "{{ url_for('static', filename='bus.png') }}",
   iconSize: [32, 32]
 });
 
 var stopIcon = L.icon({
-  iconUrl: "/static/stop.png",
+  iconUrl: "{{ url_for('static', filename='stop.png') }}",
   iconSize: [28, 28]
 });
 
@@ -27,11 +27,13 @@ fetch("/api/stops")
     let allStops = document.getElementById("allStops");
 
     stops.forEach(s => {
+      // Marker
       let marker = L.marker([s.lat, s.lng], { icon: stopIcon })
         .addTo(map)
         .bindPopup(s.name);
       stopMarkers.push({ name: s.name, marker: marker });
 
+      // Stop list (2 ส่วน)
       let li1 = document.createElement("li");
       li1.innerText = s.name;
       li1.onclick = () => map.setView([s.lat, s.lng], 18);
@@ -71,6 +73,7 @@ function showPanel(event, panel) {
   document.getElementById(panel + '-panel').classList.add('active');
   event.currentTarget.classList.add('active');
 
+  // ป้องกัน map ไม่โหลดเต็มหลังเปลี่ยนแท็บ
   setTimeout(() => map.invalidateSize(), 200);
 }
 
@@ -83,3 +86,4 @@ function filterStops() {
     lis[i].style.display = text.includes(filter) ? "" : "none";
   }
 }
+
