@@ -15,17 +15,16 @@ body {
 }
 
 .logo {
-  max-width: 300px;
-  margin: 0 auto 40px;
+  max-width: 300px; 
+  margin: 0 auto 50px; 
   display: block;
 }
 
 h2 {
   font-weight: bold;
-  margin-bottom: 20px;
+  margin-bottom: 20px;  
 }
 
-/* ======= ฟอร์ม ======= */
 form {
   display: flex;
   flex-direction: column;
@@ -57,7 +56,6 @@ form {
   color: #666;
 }
 
-/* ======= ปุ่ม ======= */
 .btn {
   background: #F26522;
   color: white;
@@ -67,29 +65,16 @@ form {
   font-size: 16px;
   cursor: pointer;
   font-weight: bold;
-  margin-top: 5px;
-  transition: background 0.3s ease;
 }
 
 .btn:hover {
   background: #d45218;
 }
 
-/* ปุ่มรอง */
 .btn.secondary {
   background: #f26522;
 }
 
-.btn.back {
-  background: #f26522;
-}
-
-.btn.secondary:hover,
-.btn.back:hover {
-  background: #d45218;
-}
-
-/* ลิงก์ลืมรหัสผ่าน */
 .forgot {
   text-align: right;
   color: red;
@@ -103,3 +88,24 @@ form {
   color: #d45218;
 }
 
+.back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-color: #ff6600;   /* สีส้ม KMITL */
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.2s ease;
+  z-index: 1000;
+}
+
+.back-btn:hover {
+  background-color: #e65c00;
+  transform: translateY(-2px);
+}
