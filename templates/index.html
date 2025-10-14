@@ -16,11 +16,19 @@
   <div class="container">
     <!-- Sidebar -->
     <div class="sidebar">
+
       <button class="menu-item active" onclick="showPanel(event, 'search')">🔍<br>ค้นหา</button>
       <button class="menu-item" onclick="showPanel(event, 'stops')">📍<br>ป้าย</button>
       <button class="menu-item" onclick="showPanel(event, 'lines')">🚌<br>สาย</button>
       <button class="menu-item" onclick="showPanel(event, 'settings')">⚙️<br>ตั้งค่า</button>
       <button class="menu-item" onclick="showPanel(event, 'profile')">👤<br>ผู้ใช้งาน</button>
+
+      <button class="menu-item active" onclick="showPanel('search')">🔍<br>ค้นหา</button>
+      <button class="menu-item" onclick="showPanel('stops')">📍<br>ป้าย</button>
+      <button class="menu-item" onclick="showPanel('lines')">🚌<br>สาย</button>
+      <button class="menu-item" onclick="showPanel('settings')">⚙️<br>ตั้งค่า</button>
+      <button class="menu-item" onclick="showPanel('profile')">👤<br>ผู้ใช้งาน</button>
+
     </div>
 
     <!-- Panel -->
@@ -45,7 +53,12 @@
       <div id="settings-panel" class="panel-content">
         <h3>⚙️ ตั้งค่า</h3>
         <p>Theme: Light/Dark (mockup)</p>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
+          เข้าสู่หน้าแอดมิน
+        </a>
+
       </div>
+
 
       <div id="profile-panel" class="panel-content">
         <h3>👤 ผู้ใช้งาน</h3>
@@ -53,6 +66,15 @@
         <button onclick="location.href='{{ url_for('register') }}'" class="btn-register">สมัครสมาชิก</button>
       </div>
     </div>
+
+        
+         
+
+    </div>
+    
+
+
+
     
     <!-- Map -->
     <div id="map"></div>
