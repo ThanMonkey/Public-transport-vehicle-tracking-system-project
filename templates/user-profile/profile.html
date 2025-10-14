@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KMITL Shuttle Tracking</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <button class="menu-item active" onclick="showPanel('search')">🔍<br>ค้นหา</button>
+      <button class="menu-item" onclick="showPanel('stops')">📍<br>ป้าย</button>
+      <button class="menu-item" onclick="showPanel('lines')">🚌<br>สาย</button>
+      <button class="menu-item" onclick="showPanel('settings')">⚙️<br>ตั้งค่า</button>
+    </div>
+
+    <!-- Panel -->
+    <div class="panel" id="panel">
+      <div id="search-panel" class="panel-content active">
+        <h3>🔍 ค้นหาป้าย</h3>
+        <input type="text" id="searchBox" placeholder="พิมพ์ชื่อป้าย..." onkeyup="filterStops()">
+        <ul id="stopList"></ul>
+      </div>
+
+      <div id="stops-panel" class="panel-content">
+        <h3>🚏 รายการป้าย</h3>
+        <ul id="allStops"></ul>
+      </div>
+
+      <div id="lines-panel" class="panel-content">
+        <h3>🚌 สายรถบัส</h3>
+        <p>🚍 สาย A - วนรอบใหญ่</p>
+        <p>🚍 สาย B - วนรอบเล็ก</p>
+      </div>
+
+      <div id="settings-panel" class="panel-content">
+        <h3>⚙️ ตั้งค่า</h3>
+        <p>Theme: Light/Dark (mockup)</p>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div id="map"></div>
+  </div>
+
+  <script>
+    // Map
+    var map = L.map('map').setView([13.729, 100.776], 16);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Custom icons
+    var busIcon = L.icon({
+      iconUrl: "{{ url_for('static', filename='bus.png') }}",
+      iconSize: [32, 32]
+    });
+
+    var stopIcon = L.icon({
+      iconUrl: "{{ url_for('static', filename='stop.png') }}",
+      iconSize: [28, 28]
+    });
+
+    var busMarkers = {};
+    var stopMarkers = [];
+
+    // โหลดป้ายรถเมล์
+    fetch("/api/stops")
+      .then(res => res.json())
+      .then(stops => {
+        let stopList = document.getElementById("stopList");
+        let allStops = document.getElementById("allStops");
+
+        stops.forEach((s, i) => {
+          // เพิ่ม marker
+          let marker = L.marker([s.lat, s.lng], {icon: stopIcon})
+            .addTo(map)
+            .bindPopup(s.name);
+          stopMarkers.push({name: s.name, marker: marker});
+
+          // เพิ่มใน list
+          let li1 = document.createElement("li");
+          li1.innerText = s.name;
+          li1.onclick = () => map.setView([s.lat, s.lng], 18);
+          stopList.appendChild(li1);
+
+          let li2 = li1.cloneNode(true);
+          li2.onclick = () => map.setView([s.lat, s.lng], 18);
+          allStops.appendChild(li2);
+        });
+      });
+
+    // โหลดรถบัส
+    function loadBuses() {
+      fetch("/api/buses")
+        .then(res => res.json())
+        .then(data => {
+          data.forEach(bus => {
+            let key = bus.id;
+            if (busMarkers[key]) {
+              busMarkers[key].setLatLng([bus.lat, bus.lng]);
+            } else {
+              busMarkers[key] = L.marker([bus.lat, bus.lng], {icon: busIcon})
+                .addTo(map)
+                .bindPopup("สาย " + bus.line);
+            }
+          });
+        });
+    }
+    loadBuses();
+    setInterval(loadBuses, 5000);
+
+    // Sidebar switching
+    function showPanel(panel) {
+      document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.panel-content').forEach(el => el.classList.remove('active'));
+
+      if (panel === 'search') {
+        document.querySelector('#search-panel').classList.add('active');
+      } else if (panel === 'stops') {
+        document.querySelector('#stops-panel').classList.add('active');
+      } else if (panel === 'lines') {
+        document.querySelector('#lines-panel').classList.add('active');
+      } else if (panel === 'settings') {
+        document.querySelector('#settings-panel').classList.add('active');
+      }
+
+      event.currentTarget.classList.add('active');
+    }
+
+    // Filter search
+    function filterStops() {
+      let filter = document.getElementById("searchBox").value.toLowerCase();
+      let lis = document.getElementById("stopList").getElementsByTagName("li");
+      for (let i = 0; i < lis.length; i++) {
+        let text = lis[i].innerText.toLowerCase();
+        lis[i].style.display = text.includes(filter) ? "" : "none";
+      }
+    }
+  </script>
+  <style>
+    /* ============================
+   🔷 Global Styles
+============================ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Prompt", sans-serif;
+}
+
+body {
+  height: 100vh;
+  display: flex;
+  background-color: #f4f6fb;
+  color: #1e293b;
+  overflow: hidden;
+}
+
+/* ============================
+   🧭 Layout Structure
+============================ */
+.container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
+/* ============================
+   📋 Sidebar Menu
+============================ */
+.sidebar {
+  width: 80px;
+  background: #F26522;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0;
+  gap: 1rem;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.15);
+  transition: width 0.3s ease;
+}
+
+.sidebar:hover {
+  width: 220px;
+}
+
+.menu-item {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.4;
+  padding: 12px 10px;
+  width: 90%;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.menu-item:hover {
+  background-color: #334155;
+  color: #fff;
+}
+
+.menu-item.active {
+  background-color: #90d134;
+  color: white;
+  box-shadow: 0 2px 6px rgba(14,165,233,0.3);
+}
+
+/* ============================
+   🪟 Right Panel (content area)
+============================ */
+.panel {
+  width: 320px;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 1.2rem 1.2rem 2rem;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.panel h3 {
+  font-size: 18px;
+  margin-bottom: 1rem;
+  color: #0f172a;
+}
+
+.panel p {
+  color: #475569;
+  margin-bottom: 0.6rem;
+  line-height: 1.5;
+}
+
+/* Panel content switching */
+.panel-content {
+  display: none;
+}
+
+.panel-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ============================
+   🔍 Search Box
+============================ */
+#searchBox {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  outline: none;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+#searchBox:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 5px rgba(14,165,233,0.3);
+}
+
+/* ============================
+   🗒️ List Style
+============================ */
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+li {
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+li:hover {
+  background-color: #e0f2fe;
+  transform: translateX(4px);
+}
+
+/* ============================
+   🗺️ Map Container
+============================ */
+#map {
+  flex: 1;
+  height: 100%;
+  z-index: 0;
+}
+
+/* ============================
+   🎞️ Animations
+============================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================
+   🧭 Scrollbar Styling
+============================ */
+.panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+
+.panel::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* ============================
+   📱 Responsive Design
+============================ */
+@media (max-width: 768px) {
+  .sidebar {
+    flex-direction: row;
+    width: 100%;
+    height: 70px;
+    justify-content: space-around;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  }
+
+  .panel {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 45%;
+    border-right: none;
+    border-top: 1px solid #e2e8f0;
+    background: white;
+  }
+
+  #map {
+    height: 55%;
+  }
+}
+
+  </style>
+</body>
+</html>
