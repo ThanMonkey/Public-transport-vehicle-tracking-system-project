@@ -165,3 +165,73 @@ li:hover {
   }
   #map { height: 55%; }
 }
+/* --- Styles for Bus Line List (เพื่อรองรับปุ่มแจ้งเตือนด้านหลัง) --- */
+/* ปรับ class bus-list-item เดิมของคุณให้เป็น flex */
+.bus-list-item { 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+/* --- Styles for Bus Detail Panel (รายการป้ายพร้อมเวลา/ปุ่ม) --- */
+.route-list-container {
+    padding: 10px 15px;
+}
+
+.stop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    /* เปลี่ยน li ให้ดูเป็นระเบียบขึ้น (ตามรูป Image 99f220.png) */
+    list-style: none;
+}
+
+.stop-info {
+    flex-grow: 1;
+    padding-right: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+.stop-info span {
+    margin-right: 5px;
+    color: #f97316; /* สีส้มสำหรับลูกศร */
+    font-weight: bold;
+}
+
+.stop-time-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.stop-time {
+    font-weight: bold;
+    color: #444;
+    font-size: 14px;
+}
+
+/* Alert Button (ปุ่มกระดิ่ง) */
+.alert-button {
+    border: 1px solid #f97316; /* ขอบส้ม */
+    background: none;
+    padding: 4px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    color: #f97316; /* สีส้ม (สถานะปิดแจ้งเตือน) */
+    transition: all 0.2s;
+}
+
+.alert-button.active {
+    border-color: #10b981; /* ขอบเขียว */
+    color: #10b981; /* สีเขียว (สถานะเปิดแจ้งเตือน) */
+}
