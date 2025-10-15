@@ -51,6 +51,9 @@ def get_buses():
         bus["lng"] += random.uniform(-0.0003, 0.0003)
     return jsonify(buses)
 
+# -------------------------------
+# Firebase Test Route
+# -------------------------------
 @app.route('/test-firebase')
 def test_firebase():
     try:
@@ -67,6 +70,14 @@ def test_firebase():
 app.register_blueprint(admin_bp, url_prefix="/admin")
 
 # -------------------------------
+
+# -------------------------------
+# Admin Blueprint
+# -------------------------------
+app.register_blueprint(admin_bp, url_prefix="/admin")
+
+# -------------------------------
+
 # Run Flask
 # -------------------------------
 if __name__ == '__main__':
