@@ -1,4 +1,8 @@
 .DS_Store
+
+# ===== Firebase Service Account =====
+backend/firebase/serviceaccount.json
+
 # ===== Python bytecode / cache =====
 __pycache__/
 *.py[cod]

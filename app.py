@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, request, jsonify
 from admin import admin_bp
 import random
+from backend.firebase.firebase_config import get_firestore
 
 app = Flask(__name__)
 
@@ -51,11 +52,32 @@ def get_buses():
     return jsonify(buses)
 
 # -------------------------------
+# Firebase Test Route
+# -------------------------------
+@app.route('/test-firebase')
+def test_firebase():
+    try:
+        db = get_firestore()
+        doc_ref = db.collection("test_connection").document("status")
+        doc_ref.set({"connected": True})
+        return {"message": "✅ Firestore connected successfully!"}
+    except Exception as e:
+        return {"error": str(e)}
+
+# -------------------------------
 # Admin Blueprint
 # -------------------------------
 app.register_blueprint(admin_bp, url_prefix="/admin")
 
 # -------------------------------
+
+# -------------------------------
+# Admin Blueprint
+# -------------------------------
+app.register_blueprint(admin_bp, url_prefix="/admin")
+
+# -------------------------------
+
 # Run Flask
 # -------------------------------
 if __name__ == '__main__':
