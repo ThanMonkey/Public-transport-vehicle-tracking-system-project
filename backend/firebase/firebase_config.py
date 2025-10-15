@@ -2,8 +2,8 @@ import os
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# โหลด key ของโปรเจกต์ Firebase
-cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+# เชื่อมต่อ Firebase
+cred_path = r"D:\Public-transport-vehicle-tracking-system-project\serviceaccount.json"
 cred = credentials.Certificate(cred_path)
 
 # เริ่มต้นเชื่อมต่อ Firebase

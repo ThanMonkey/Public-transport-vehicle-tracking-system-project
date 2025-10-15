@@ -71,13 +71,6 @@ app.register_blueprint(admin_bp, url_prefix="/admin")
 
 # -------------------------------
 
-# -------------------------------
-# Admin Blueprint
-# -------------------------------
-app.register_blueprint(admin_bp, url_prefix="/admin")
-
-# -------------------------------
-
 # Run Flask
 # -------------------------------
 if __name__ == '__main__':
