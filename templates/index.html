@@ -21,6 +21,7 @@
       <button class="menu-item" onclick="showPanel(event, 'lines')">🚌<br>สาย</button>
       <button class="menu-item" onclick="showPanel(event, 'settings')">⚙️<br>ตั้งค่า</button>
       <button class="menu-item" onclick="location.href='{{ url_for('login') }}'">👤<br>ผู้ใช้งาน</button>
+      <a href="{{ url_for('admin.dashboard') }}" class="menu-item">👤<br>แอดมิน</a>
     </div>
 
     <!-- Panel -->
@@ -38,15 +39,8 @@
 
       <div id="lines-panel" class="panel-content">
         <h3>🚌 สายรถบัส</h3>
-        <ul id="busList"></ul>
-      </div>
-
-      <div id="bus-detail-panel" class="panel-content">
-          <h3 id="busDetailHeader">🚌 รายละเอียดสายรถ</h3>
-          <div class="route-list-container">
-              <ul id="routeStopsList" class="list-style-none">
-                  </ul>
-          </div>
+        <p>🚍 สาย A - วนรอบใหญ่</p>
+        <p>🚍 สาย B - วนรอบเล็ก</p>
       </div>
 
       <div id="settings-panel" class="panel-content">
