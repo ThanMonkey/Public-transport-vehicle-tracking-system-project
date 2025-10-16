@@ -20,9 +20,12 @@ async def startup_event():
 
 @app.websocket("/realtime")
 async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
     await manager.connect(websocket)
     try:
         while True:
-            await manager.broadcast(1)
+            # ส่ง heartbeat หรือข้อมูล realtime
+            await asyncio.sleep(1)
+            await manager.broadcast({"msg": "heartbeat"})
     except WebSocketDisconnect:
         manager.disconnect(websocket)

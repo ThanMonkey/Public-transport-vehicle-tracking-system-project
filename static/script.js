@@ -1,203 +1,181 @@
 /* =====================================================
-   🚌 KMITL Shuttle Tracking (Demo)
+   🚌 KMITL Shuttle Tracking - Smooth Realtime Demo
    ===================================================== */
 
-// ===== 1️⃣ Map Initialization =====
-var map = L.map('map').setView([13.729, 100.776], 16);
+// ===== 0️⃣ Global Variables =====
+let map;
+let buses = [];
+let busMarkers = {};      // เก็บ marker ของแต่ละรถ
+let routeAlertStatus = {}; // สถานะแจ้งเตือนสายรถ
+let stopAlertStatus = {};  // สถานะแจ้งเตือนป้าย
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+// ===== 1️⃣ Initialize Map =====
+function initMap() {
+    map = L.map('map').setView([13.729, 100.776], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+}
+initMap();
 
 // ===== 2️⃣ Custom Icons =====
-var busIcon = L.icon({
-  iconUrl: "/static/bus.png",
-  iconSize: [32, 32],
-  iconAnchor: [16, 16]
-});
+const busIcon = L.icon({ iconUrl: "/static/bus.png", iconSize: [32,32], iconAnchor: [16,16] });
+const stopIcon = L.icon({ iconUrl: "/static/stop.png", iconSize: [28,28], iconAnchor: [14,14] });
 
-var stopIcon = L.icon({
-  iconUrl: "/static/stop.png",
-  iconSize: [28, 28],
-  iconAnchor: [14, 14]
-});
-
-// ===== 3️⃣ Demo Data =====
+// ===== 3️⃣ Fake Stops for Demo =====
 const fakeStops = [
-    // กำหนดเวลาถึงโดยประมาณ (นาที) สำหรับใช้ในการแสดงผล
-    { name: "หน้าตึกพระจอม", lat: 13.7294, lng: 100.776, arrivalTime: 0 }, // ป้ายปัจจุบัน/ถัดไป 0 นาที
-    { name: "โรงอาหารกลาง", lat: 13.7299, lng: 100.778, arrivalTime: 5 },  // 5 นาที
-    { name: "คณะวิศวกรรมศาสตร์", lat: 13.7303, lng: 100.774, arrivalTime: 12 }, // 12 นาที
-    { name: "อาคารเรียนรวม", lat: 13.7287, lng: 100.773, arrivalTime: 20 }, // 20 นาที (ป้ายสุดท้าย)
+    { name: "หน้าตึกพระจอม", lat: 13.7294, lng: 100.776, arrivalTime: 0 },
+    { name: "โรงอาหารกลาง", lat: 13.7299, lng: 100.778, arrivalTime: 5 },
+    { name: "คณะวิศวกรรมศาสตร์", lat: 13.7303, lng: 100.774, arrivalTime: 12 },
+    { name: "อาคารเรียนรวม", lat: 13.7287, lng: 100.773, arrivalTime: 20 }
 ];
 
-const fakeBuses = [
-  { id: 1, line: "A", lat: 13.729, lng: 100.776 },
-  { id: 2, line: "B", lat: 13.730, lng: 100.778 }
-];
-
-// *** เพิ่มตัวแปรสถานะแจ้งเตือน (หลัง Demo Data) ***
-let routeAlertStatus = {}; // สำหรับสถานะแจ้งเตือนของสายรถ (ปุ่มหลัง 'สาย A (1)')
-let stopAlertStatus = {};  // สำหรับสถานะแจ้งเตือนของป้ายรถ (ปุ่มใน Panel รายละเอียดรถ)
-
-// ===== 4️⃣ Stop List =====
+// ===== 4️⃣ Load Stops on Map + Sidebar =====
 function loadStops() {
-  const stopList = document.getElementById("stopList");
-  const allStops = document.getElementById("allStops");
+    const stopList = document.getElementById("stopList");
+    const allStops = document.getElementById("allStops");
+    stopList.innerHTML = '';
+    allStops.innerHTML = '';
 
-  fakeStops.forEach(s => {
-    const marker = L.marker([s.lat, s.lng], { icon: stopIcon })
-      .addTo(map)
-      .bindPopup(s.name);
+    fakeStops.forEach(stop => {
+        // Marker
+        L.marker([stop.lat, stop.lng], { icon: stopIcon }).addTo(map).bindPopup(stop.name);
 
-    // รายชื่อใน panel
-    const li1 = document.createElement("li");
-    li1.innerText = s.name;
-    li1.onclick = () => map.setView([s.lat, s.lng], 18);
-    stopList.appendChild(li1);
-
-    const li2 = li1.cloneNode(true);
-    li2.onclick = () => map.setView([s.lat, s.lng], 18);
-    allStops.appendChild(li2);
-  });
+        // Sidebar lists
+        [stopList, allStops].forEach(list => {
+            const li = document.createElement("li");
+            li.innerText = stop.name;
+            li.onclick = () => map.setView([stop.lat, stop.lng], 18);
+            list.appendChild(li);
+        });
+    });
 }
 loadStops();
 
-// ===== 4.1️⃣ Route Stop List with Alert Feature (NEW FUNCTION) =====
+// ===== 5️⃣ Render Route Stops in Panel =====
 function renderRouteStops(routeLine) {
-    // กำหนด Header ของ Panel
-    const header = document.getElementById("busDetailHeader");
-    if (header) {
-        header.innerHTML = `🚌 สาย ${routeLine} (ป้ายถัดไป)`;
-    }
-
     const container = document.getElementById("routeStopsList");
     if (!container) return;
-    
-    container.innerHTML = ''; 
+    container.innerHTML = '';
 
-    fakeStops.forEach((stop) => {
+    const header = document.getElementById("busDetailHeader");
+    if (header) header.innerText = `🚌 สาย ${routeLine} (ป้ายถัดไป)`;
+
+    fakeStops.forEach(stop => {
+        const stopId = `${routeLine}-${stop.name}`;
+
         const item = document.createElement('li');
         item.className = 'stop-item';
-        // ใช้ ID ที่ไม่ซ้ำกันสำหรับสถานะแจ้งเตือนป้ายรถของแต่ละสาย
-        const stopId = `${routeLine}-${stop.name}`; 
 
-        // 1. ส่วนข้อมูลป้าย
         const info = document.createElement('div');
         info.className = 'stop-info';
-        info.innerHTML = stop.name;
+        info.innerText = stop.name;
         item.appendChild(info);
 
-        // 2. ส่วนเวลาและปุ่มแจ้งเตือน
         const timeAlert = document.createElement('div');
         timeAlert.className = 'stop-time-alert';
 
         const timeDisplay = document.createElement('div');
         timeDisplay.className = 'stop-time';
-        // แสดงเวลา หรือ "-- นาที"
-        timeDisplay.innerText = stop.arrivalTime === null ? "-- นาที" : `${stop.arrivalTime} นาที`;
+        timeDisplay.innerText = stop.arrivalTime != null ? `${stop.arrivalTime} นาที` : '-- นาที';
         timeAlert.appendChild(timeDisplay);
 
         const alertBtn = document.createElement('button');
-        
-        const isAlertActive = stopAlertStatus[stopId] || false;
-        alertBtn.className = `alert-button ${isAlertActive ? 'active' : ''}`;
-        alertBtn.innerHTML = isAlertActive ? '🔔' : '🔕'; // 🔕 (Unicode U+1F515) คือ กระดิ่งมีขีดฆ่า
-
-        alertBtn.onclick = (e) => {
-            e.stopPropagation(); // ป้องกันไม่ให้ item.onclick (ซูมแผนที่) ทำงาน
-
-            // สลับสถานะแจ้งเตือนป้าย
-            stopAlertStatus[stopId] = !isAlertActive; 
-            
-            // อัปเดต UI (เรียก render ใหม่เพื่อให้สถานะปุ่มเปลี่ยนสี)
+        const isActive = stopAlertStatus[stopId] || false;
+        alertBtn.className = `alert-button ${isActive ? 'active' : ''}`;
+        alertBtn.innerHTML = isActive ? '🔔' : '🔕';
+        alertBtn.onclick = e => {
+            e.stopPropagation();
+            stopAlertStatus[stopId] = !isActive;
             renderRouteStops(routeLine);
-            
-            if (stopAlertStatus[stopId]) {
-                alert(`ตั้งค่าแจ้งเตือน: จะแจ้งเตือนเมื่อรถสาย ${routeLine} ถึงป้าย ${stop.name} (${stop.arrivalTime} นาที)!`);
-            } else {
-                 alert(`ยกเลิกแจ้งเตือน: ${stop.name} ของสาย ${routeLine}`);
-            }
+            alert(stopAlertStatus[stopId] ? `ตั้งค่าแจ้งเตือน: รถสาย ${routeLine} ถึง ${stop.name}` : `ยกเลิกแจ้งเตือน ${stop.name}`);
         };
-        
+
         timeAlert.appendChild(alertBtn);
         item.appendChild(timeAlert);
-        container.appendChild(item);
 
-        item.onclick = (e) => {
-             // ซูมไปที่ตำแหน่งป้าย
-             map.setView([stop.lat, stop.lng], 18);
-        };
+        item.onclick = () => map.setView([stop.lat, stop.lng], 18);
+        container.appendChild(item);
     });
 }
 
-// ===== 5️⃣ Bus Movement (Simulated) =====
-var busMarkers = {};
+// ===== 6️⃣ Smooth Movement Function (วนรอบ + เริ่มคนละจุด) =====
+function moveAlongRoute(busMarker, route, startIndex = 0, speed = 0.002) {
+    let index = startIndex;
 
-function loadBuses() {
-  fakeBuses.forEach(bus => {
-    if (busMarkers[bus.id]) {
-      const newLat = bus.lat + (Math.random() - 0.5) * 0.0003;
-      const newLng = bus.lng + (Math.random() - 0.5) * 0.0003;
-      busMarkers[bus.id].setLatLng([newLat, newLng]);
-    } else {
-      busMarkers[bus.id] = L.marker([bus.lat, bus.lng], { icon: busIcon })
-        .addTo(map)
-        .bindPopup(`🚍 สาย ${bus.line}`);
+    function step() {
+        if (route.length === 0) return;
+
+        const [lat, lng] = route[index];
+        const pos = busMarker.getLatLng();
+        const latDiff = lat - pos.lat;
+        const lngDiff = lng - pos.lng;
+
+        if (Math.abs(latDiff) < 0.00001 && Math.abs(lngDiff) < 0.00001) {
+            index++;
+            if (index >= route.length) index = 0; // วนรอบ
+        } else {
+            busMarker.setLatLng([pos.lat + latDiff * speed, pos.lng + lngDiff * speed]);
+        }
+
+        requestAnimationFrame(step);
     }
-  });
-}
-loadBuses();
-setInterval(loadBuses, 5000);
 
-// ===== 5.1️⃣ Bus List (Linking Bus Marker to Panel List) (MODIFIED) =====
+    step();
+}
+
+// ===== 7️⃣ Load Bus Markers & Start Movement =====
+function loadBuses() {
+    buses.forEach((bus, i) => {
+        const busId = bus.bus_id ?? bus.id;
+        const lineName = bus.line ?? busId;
+
+        // กำหนด route สำหรับรถคันนี้ (ใช้ fakeStops)
+        const route = fakeStops.map(s => [s.lat, s.lng]);
+
+        if (!busMarkers[busId]) {
+            // เริ่มรถแต่ละคันจาก index ต่างกัน
+            const startIndex = i % route.length;
+            busMarkers[busId] = L.marker(route[startIndex], { icon: busIcon })
+                .addTo(map)
+                .bindPopup(`🚍 สาย ${lineName}`);
+
+            moveAlongRoute(busMarkers[busId], route, startIndex, 0.01); // ปรับความเร็ว
+        }
+    });
+}
+
+// ===== 8️⃣ Load Bus List Sidebar =====
 function loadBusList() {
     const busList = document.getElementById("busList");
-    if (!busList) return; 
-    
-    busList.innerHTML = ''; 
+    if (!busList) return;
+    busList.innerHTML = '';
 
-    fakeBuses.forEach(bus => {
-        const busId = bus.id;
-        const lineName = `สาย ${bus.line} (${bus.id})`;
-        
-        // --- 1. สร้าง li (ใช้ class bus-list-item) ---
+    buses.forEach(bus => {
+        const busId = bus.bus_id ?? bus.id;
+        const lineName = bus.line ?? busId;
+
         const li = document.createElement("li");
-        li.className = "bus-list-item"; // ใช้ class เพื่อจัดรูปแบบ flex ใน CSS
-        
-        // 2. สร้างส่วนชื่อสายรถ (สำหรับคลิกเปลี่ยน Panel)
+        li.className = 'bus-list-item';
+
         const nameDiv = document.createElement('div');
-        nameDiv.innerText = `🚍 ${lineName}`;
-        nameDiv.style.flexGrow = '1'; 
-        
-        // *** โค้ดที่เปลี่ยนไปเพื่อรองรับการคลิกดูรายละเอียดป้าย ***
+        nameDiv.innerText = `🚍 สาย ${lineName}`;
+        nameDiv.style.flexGrow = '1';
         nameDiv.onclick = () => {
-            // 1. สลับไปที่ Panel รายละเอียดรถ
-            showPanel(null, 'bus-detail'); 
-            // 2. โหลดรายการป้ายพร้อมเวลา/ปุ่มแจ้งเตือน
-            renderRouteStops(bus.line); 
-            
+            showPanel(null, 'bus-detail');
+            renderRouteStops(busId);
             const marker = busMarkers[busId];
-            if (marker) {
-                map.setView(marker.getLatLng(), 18);
-                marker.openPopup();
-            }
+            if (marker) { map.setView(marker.getLatLng(), 18); marker.openPopup(); }
         };
 
-        // 3. สร้างปุ่มแจ้งเตือนของสายรถ (ปุ่มที่อยู่หลัง สาย A (1))
         const alertBtn = document.createElement('button');
-        const isAlertActive = routeAlertStatus[busId] || false;
-        
-        alertBtn.className = `alert-button ${isAlertActive ? 'active' : ''}`;
-        alertBtn.innerHTML = isAlertActive ? '🔔' : '🔕'; 
-
-        alertBtn.onclick = (e) => {
-            e.stopPropagation(); // ป้องกันไม่ให้ nameDiv.onclick ทำงาน
-
-            routeAlertStatus[busId] = !isAlertActive; // สลับสถานะ
-            
-            // อัปเดต UI (เรียกตัวเองซ้ำเพื่ออัปเดตสถานะปุ่ม)
-            loadBusList(); 
+        const isActive = routeAlertStatus[busId] || false;
+        alertBtn.className = `alert-button ${isActive ? 'active' : ''}`;
+        alertBtn.innerHTML = isActive ? '🔔' : '🔕';
+        alertBtn.onclick = e => {
+            e.stopPropagation();
+            routeAlertStatus[busId] = !isActive;
+            loadBusList();
         };
 
         li.appendChild(nameDiv);
@@ -206,48 +184,41 @@ function loadBusList() {
     });
 }
 
-// **เรียกใช้ฟังก์ชันใหม่นี้ที่นี่**
-loadBusList(); 
-
-// ===== 6️⃣ Sidebar Switching =====
+// ===== 9️⃣ Sidebar Switching =====
 function showPanel(event, panel) {
-  document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.panel-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.panel-content').forEach(el => el.classList.remove('active'));
 
-  const targetPanel = document.getElementById(panel + '-panel');
-  if (targetPanel) targetPanel.classList.add('active');
-  if (event) event.currentTarget.classList.add('active');
+    const targetPanel = document.getElementById(panel + '-panel');
+    if (targetPanel) targetPanel.classList.add('active');
+    if (event) event.currentTarget.classList.add('active');
 
-  // ปรับขนาดแผนที่ใหม่
-  setTimeout(() => map.invalidateSize(), 200);
+    setTimeout(() => map.invalidateSize(), 200);
 }
 
-// ===== 7️⃣ Filter Stops =====
+// ===== 🔟 Filter Stops =====
 function filterStops() {
-  const filter = document.getElementById("searchBox").value.toLowerCase();
-  const lis = document.getElementById("stopList").getElementsByTagName("li");
-  for (let i = 0; i < lis.length; i++) {
-    const text = lis[i].innerText.toLowerCase();
-    lis[i].style.display = text.includes(filter) ? "" : "none";
-  }
+    const filter = document.getElementById("searchBox").value.toLowerCase();
+    document.querySelectorAll("#stopList li").forEach(li => {
+        li.style.display = li.innerText.toLowerCase().includes(filter) ? "" : "none";
+    });
 }
 
-// ===== 8️⃣ Toggle Dark Mode =====
-const darkModeToggle = document.getElementById("darkModeToggle");
-if (darkModeToggle) {
-  darkModeToggle.addEventListener("change", (e) => {
-    if (e.target.checked) {
-      document.body.style.background = "#1e293b";
-      document.querySelector(".panel").style.background = "#0f172a";
-      document.querySelector(".panel").style.color = "#f8fafc";
-    } else {
-      document.body.style.background = "#f4f6fb";
-      document.querySelector(".panel").style.background = "#fff";
-      document.querySelector(".panel").style.color = "#1e293b";
+// ===== 1️⃣1️⃣ WebSocket Realtime =====
+const ws = new WebSocket("ws://127.0.0.1:8000/realtime");
+
+ws.onopen = () => console.log("✅ WebSocket connected");
+ws.onmessage = event => {
+    try {
+        const data = JSON.parse(event.data);
+        if (data.buses) {
+            buses = data.buses;
+            loadBuses();    // เคลื่อนที่รถ
+            loadBusList();  // อัปเดตรายชื่อ sidebar
+        }
+    } catch(e) {
+        console.error("❌ WS parse error:", e);
     }
-  });
-}
-
-// ===== ✅ Debug Log =====
-console.log("✅ index.js Loaded Successfully");
-
+};
+ws.onerror = err => console.error("❌ WS Error", err);
+ws.onclose = e => console.warn("⚠️ WS closed", e);

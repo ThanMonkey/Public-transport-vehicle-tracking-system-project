@@ -30,6 +30,12 @@ async def receive_gps(data: GPSData):
     
     return {"message": f"Data for {data.bus_id} saved successfully!"}
 
+@router.get("/gps/all")
+async def get_all_buses():
+    buses = db.collection("bus_tracking").stream()
+    results = [doc.to_dict() for doc in buses]
+    return {"count": len(results), "buses": results}
+
 @router.get("/gps/{bus_id}")
 async def get_gps(bus_id: str):
     doc = db.collection("bus_tracking").document(bus_id).get()

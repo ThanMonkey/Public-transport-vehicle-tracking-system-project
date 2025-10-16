@@ -5,4 +5,4 @@ class GPSData(BaseModel):
     user_id: str
     lat: float
     lng: float
-    timestamp: str
+    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
