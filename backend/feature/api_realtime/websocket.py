@@ -11,7 +11,6 @@ class ConnectionManager:
         self.active_connections: List[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
-        await websocket.accept()
         self.active_connections.append(websocket)
         print(f"✅ Client connected ({len(self.active_connections)})")
 
@@ -41,6 +40,6 @@ class ConnectionManager:
                 })
             if self.active_connections:
                 await self.broadcast({"buses": result})
-            await asyncio.sleep(1200)  # ปรับเวลาได้ตามต้องการ
+            await asyncio.sleep(5)  # ปรับเวลาได้ตามต้องการ
 
 manager = ConnectionManager()
