@@ -1,0 +1,63 @@
+.DS_Store
+
+# ===== Firebase Service Account =====
+backend/firebase/serviceaccount.json
+
+# ===== Python bytecode / cache =====
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ===== Virtual environments (อย่าขึ้น repo) =====
+.venv/
+venv/
+env/
+ENV/
+
+# ===== Secrets / ค่าแวดล้อม (อย่า commit เด็ดขาด) =====
+.env
+.env.*
+*.env
+
+# ===== Build & Packaging =====
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ===== Test & Coverage =====
+.pytest_cache/
+.coverage*
+htmlcov/
+.tox/
+
+# ===== Static/Uploads ที่สร้างจากรันไทม์ (ถ้ามี) =====
+# ตัวอย่าง: ถ้าแอปสร้างไฟล์อัปโหลดไว้โฟลเดอร์นี้ ให้ ignore ไป
+uploads/
+media/
+
+# ถ้ามี static ที่ build อัตโนมัติ (เช่น webpack/vite) ให้ ignore โฟลเดอร์ผลลัพธ์
+# static/dist/
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Local DB (กรณีใช้ SQLite ระหว่าง dev) =====
+instance/
+*.db
+*.sqlite3
+
+# ===== IDE/OS =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ===== Node (ถ้าใช้งานหน้าเว็บประกอบ) =====
+node_modules/
+*.map
+
+# ===== Vim/Temp =====
+*.swp
+*.swo
