@@ -36,3 +36,9 @@ async def get_gps(bus_id: str):
     if doc.exists:
         return doc.to_dict()
     return {"error": "Bus not found"}
+
+@router.get("/gps/all")
+async def get_all_buses():
+    buses = db.collection("bus_tracking").stream()
+    results = [doc.to_dict() for doc in buses]
+    return {"count": len(results), "buses": results}
